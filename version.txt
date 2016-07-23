@@ -1,0 +1,5 @@
+[keyboard]
+name = "Svarosky Keyboard"
+hw_ver = "1"
+pcb_ver = "A"
+data = "23/7/2016"
