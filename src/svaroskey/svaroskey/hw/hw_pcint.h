@@ -27,39 +27,30 @@
  * the GNU General Public License.
  *
  * Copyright 2012 Develer S.r.l. (http://www.develer.com/)
- *
+ * All Rights Reserved.
  * -->
  *
- * \brief Configuration file for the CLI module.
+ * \brief Dataflash HW control routines.
  *
- * \author Daniele Basile <asterix@develer.com>
+ * \author Tóth Balázs <balazs.toth@jarkon.hu>
  */
+ 
+#ifndef HW_PCINT_H
+#define HW_PCINT_H
 
-#ifndef CFG_CLI_H
-#define CFG_CLI_H
+#include "cfg/cfg_pcint.h"
 
-/**
- * Module logging level.
- *
- * $WIZ$ type = "enum"
- * $WIZ$ value_list = "log_level"
- */
-#define CLI_LOG_LEVEL      LOG_LVL_INFO
+#define PCINT0_ISR  do{ /*nop*/ } while(0)
+#define PCINT1_ISR  do{ /*nop*/ } while(0)
+#define PCINT2_ISR  do{ /*nop*/ } while(0)
+#define PCINT3_ISR  do{ /*nop*/ } while(0)
+	
+#if CONFIG_PCINT_STROBE
 
-/**
- * Module logging format.
- *
- * $WIZ$ type = "enum"
- * $WIZ$ value_list = "log_format"
- */
-#define CLI_LOG_FORMAT     LOG_FMT_TERSE
+	#define PCINT_STROBE_INIT 	do{ /*nop*/ } while(0)
+	#define PCINT_STROBE_ON   	do{ /*nop*/ } while(0)
+	#define PCINT_STROBE_OFF  	do{ /*nop*/ } while(0)
 
+#endif /* CONFIG_PCINT_STROBE */
 
-/**
- * Default promt string.
- *
- * $WIZ$ type = "str"
- */
-#define CONFIG_CLI_PROMT_STR           ">> "
-
-#endif /* CFG_CLI_H */
+#endif /* HW_PCINT_H */

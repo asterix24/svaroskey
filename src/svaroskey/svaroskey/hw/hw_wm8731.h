@@ -26,40 +26,33 @@
  * invalidate any other reasons why the executable file might be covered by
  * the GNU General Public License.
  *
- * Copyright 2012 Develer S.r.l. (http://www.develer.com/)
- *
+ * Copyright 2011 Develer S.r.l. (http://www.develer.com/)
+ * All Rights Reserved.
  * -->
  *
- * \brief Configuration file for the CLI module.
+ * \brief HW pin handling for WM8731 audio codec.
+ *
  *
  * \author Daniele Basile <asterix@develer.com>
  */
 
-#ifndef CFG_CLI_H
-#define CFG_CLI_H
+#ifndef HW_WM8731_H
+#define HW_WM8731_H
 
-/**
- * Module logging level.
- *
- * $WIZ$ type = "enum"
- * $WIZ$ value_list = "log_level"
- */
-#define CLI_LOG_LEVEL      LOG_LVL_INFO
+#include <cfg/macros.h>
 
-/**
- * Module logging format.
- *
- * $WIZ$ type = "enum"
- * $WIZ$ value_list = "log_format"
- */
-#define CLI_LOG_FORMAT     LOG_FMT_TERSE
+#warning FIXME: This is an example implementation, you must implement it
 
 
-/**
- * Default promt string.
- *
- * $WIZ$ type = "str"
- */
-#define CONFIG_CLI_PROMT_STR           ">> "
+#define WM8731_PIN_INIT() \
+	do { \
+		/* implement me */ \
+	} while (0)
 
-#endif /* CFG_CLI_H */
+#define WM8731_MCLK_INIT() \
+	do { \
+		/* implement me */ \
+	} while(0)
+
+
+#endif /* HW_WM8731_H */

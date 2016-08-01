@@ -26,40 +26,48 @@
  * invalidate any other reasons why the executable file might be covered by
  * the GNU General Public License.
  *
- * Copyright 2012 Develer S.r.l. (http://www.develer.com/)
+ * Copyright 2010 Develer S.r.l. (http://www.develer.com/)
  *
  * -->
  *
- * \brief Configuration file for the CLI module.
+ * \brief SAM3N-EK: ILI9225B low-level hardware macros
  *
- * \author Daniele Basile <asterix@develer.com>
+ * \author Stefano Fedrigo <aleph@develer.com>
  */
 
-#ifndef CFG_CLI_H
-#define CFG_CLI_H
+#ifndef HW_ILI9225_H
+#define HW_ILI9225_H
 
-/**
- * Module logging level.
- *
- * $WIZ$ type = "enum"
- * $WIZ$ value_list = "log_level"
- */
-#define CLI_LOG_LEVEL      LOG_LVL_INFO
-
-/**
- * Module logging format.
- *
- * $WIZ$ type = "enum"
- * $WIZ$ value_list = "log_format"
- */
-#define CLI_LOG_FORMAT     LOG_FMT_TERSE
+#include "cfg/macros.h"   /* BV() */
 
 
 /**
- * Default promt string.
- *
- * $WIZ$ type = "str"
+ * \name LCD I/O pins/ports
+ * @{
  */
-#define CONFIG_CLI_PROMT_STR           ">> "
+#define LCD_CS_PIN         0 /* Implement me! */
+#define LCD_RESET_PIN      0 /* Implement me! */
+#define LCD_RS_PIN         0 /* Implement me! */
+/*@}*/
 
-#endif /* CFG_CLI_H */
+/**
+ * \name LCD bus control macros
+ * @{
+ */
+#define LCD_CS_HIGH()        do { /* Implement me! */ } while (0)
+#define LCD_CS_LOW()         do { /* Implement me! */ } while (0)
+#define LCD_RESET_HIGH()     do { /* Implement me! */ } while (0)
+#define LCD_RESET_LOW()      do { /* Implement me! */ } while (0)
+#define LCD_RS_HIGH()        do { /* Implement me! */ } while (0)
+#define LCD_RS_LOW()         do { /* Implement me! */ } while (0)
+/*@}*/
+
+/**
+ * Setup hardware bus where LCD is connected.
+ */
+INLINE void lcd_ili9225_hw_bus_init(void)
+{
+	/* Implement me! */
+}
+
+#endif /* HW_ILI9225_H */

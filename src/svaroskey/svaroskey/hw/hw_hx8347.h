@@ -26,40 +26,59 @@
  * invalidate any other reasons why the executable file might be covered by
  * the GNU General Public License.
  *
- * Copyright 2012 Develer S.r.l. (http://www.develer.com/)
+ * Copyright 2010 Develer S.r.l. (http://www.develer.com/)
  *
  * -->
  *
- * \brief Configuration file for the CLI module.
+ * \brief HX8347 low-level hardware macros for Atmel SAM3X-EK board.
  *
- * \author Daniele Basile <asterix@develer.com>
+ * The LCD controller is connected to the cpu static memory controller.
+ * LCD has 16 data lines and usual RS/WR/RD lines.  The data lines
+ * are connected to the SMC data bus (D0-15), while the SCM address bus
+ * (A1 only) is used to drive the RS pin.  WR/RD are connected to SMC's
+ * NWE and NRD respectively.
+ *
+ * \author Stefano Fedrigo <aleph@develer.com>
  */
 
-#ifndef CFG_CLI_H
-#define CFG_CLI_H
+#ifndef HW_HX8347_H
+#define HW_HX8347_H
+
+#warning TODO: This is an example implementation, you must implement it!
 
 /**
- * Module logging level.
- *
- * $WIZ$ type = "enum"
- * $WIZ$ value_list = "log_level"
+ * Send a command to LCD controller.
  */
-#define CLI_LOG_LEVEL      LOG_LVL_INFO
+INLINE void hx8347_cmd(uint8_t cmd)
+{
+	/* Implement me */
+	(void)cmd;
+}
 
 /**
- * Module logging format.
- *
- * $WIZ$ type = "enum"
- * $WIZ$ value_list = "log_format"
+ * Send data to LCD controller.
  */
-#define CLI_LOG_FORMAT     LOG_FMT_TERSE
-
+INLINE void hx8347_write(uint16_t data)
+{
+	/* Implement me */
+	(void)data;
+}
 
 /**
- * Default promt string.
- *
- * $WIZ$ type = "str"
+ * Read data from LCD controller.
  */
-#define CONFIG_CLI_PROMT_STR           ">> "
+INLINE uint16_t hx8347_read(void)
+{
+	/* Implement me */
+	return 0;
+}
 
-#endif /* CFG_CLI_H */
+/**
+ * Bus initialization: setup hardware where LCD is connected.
+ */
+INLINE void hx8347_busInit(void)
+{
+	/* Implement me */
+}
+
+#endif /* HW_HX8347_H */

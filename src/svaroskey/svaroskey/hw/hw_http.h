@@ -26,40 +26,27 @@
  * invalidate any other reasons why the executable file might be covered by
  * the GNU General Public License.
  *
- * Copyright 2012 Develer S.r.l. (http://www.develer.com/)
- *
+ * Copyright 2011 Develer S.r.l. (http://www.develer.com/)
+ * All Rights Reserved.
  * -->
  *
- * \brief Configuration file for the CLI module.
+ * \brief Simple Http server error pages.
  *
- * \author Daniele Basile <asterix@develer.com>
+ * \author Daniele Basile <asteix@develer.com>
  */
 
-#ifndef CFG_CLI_H
-#define CFG_CLI_H
+#ifndef HW_HTTP_H
+#define HW_HTTP_H
 
-/**
- * Module logging level.
- *
- * $WIZ$ type = "enum"
- * $WIZ$ value_list = "log_level"
- */
-#define CLI_LOG_LEVEL      LOG_LVL_INFO
+#include <cpu/types.h>
 
-/**
- * Module logging format.
- *
- * $WIZ$ type = "enum"
- * $WIZ$ value_list = "log_format"
- */
-#define CLI_LOG_FORMAT     LOG_FMT_TERSE
+extern const char http_file_not_found[];
+extern const size_t http_file_not_found_len;
 
+extern const char http_sd_not_present[];
+extern const size_t http_sd_not_present_len;
 
-/**
- * Default promt string.
- *
- * $WIZ$ type = "str"
- */
-#define CONFIG_CLI_PROMT_STR           ">> "
+extern const char http_server_error[];
+extern const size_t http_server_error_len;
 
-#endif /* CFG_CLI_H */
+#endif /*  HW_HTTP_H */

@@ -26,40 +26,28 @@
  * invalidate any other reasons why the executable file might be covered by
  * the GNU General Public License.
  *
- * Copyright 2012 Develer S.r.l. (http://www.develer.com/)
+ * Copyright 2012 Jack Bradach <jack@bradach.net>
  *
  * -->
  *
- * \brief Configuration file for the CLI module.
+ * \brief Maxim MAX31855 hardware macro definition.
  *
- * \author Daniele Basile <asterix@develer.com>
+ * \author Jack Bradach <jack@bradach.net>
  */
 
-#ifndef CFG_CLI_H
-#define CFG_CLI_H
+#ifndef HW_MAX31855_H
+#define HW_MAX31855_H
 
-/**
- * Module logging level.
- *
- * $WIZ$ type = "enum"
- * $WIZ$ value_list = "log_level"
+#warning TODO:This is an example implentation, you must implement it!
+
+#define MAX31855_HW_CS_EN()    /* Implement me!  I need to enable SPI CS! */
+#define MAX31855_HW_CS_DIS()   /* Implement me!  I need to disable SPI CS! */
+
+/* If your hardware needs some magic to make the SPI port
+ * work, here would be an excellent place for it.
  */
-#define CLI_LOG_LEVEL      LOG_LVL_INFO
+#define MAX31855_HW_INIT() \
+	do { } while (0)
 
-/**
- * Module logging format.
- *
- * $WIZ$ type = "enum"
- * $WIZ$ value_list = "log_format"
- */
-#define CLI_LOG_FORMAT     LOG_FMT_TERSE
+#endif /* HW_MAX31855_H */
 
-
-/**
- * Default promt string.
- *
- * $WIZ$ type = "str"
- */
-#define CONFIG_CLI_PROMT_STR           ">> "
-
-#endif /* CFG_CLI_H */

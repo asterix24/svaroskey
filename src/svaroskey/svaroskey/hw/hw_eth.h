@@ -26,40 +26,21 @@
  * invalidate any other reasons why the executable file might be covered by
  * the GNU General Public License.
  *
- * Copyright 2012 Develer S.r.l. (http://www.develer.com/)
+ * Copyright 2011 Develer S.r.l. (http://www.develer.com/)
  *
  * -->
  *
- * \brief Configuration file for the CLI module.
+ * \brief MAC address definition
  *
- * \author Daniele Basile <asterix@develer.com>
+ * \author Luca Ottaviano <lottaviano@develer.com>
  */
+#ifndef HW_ETH_H
+#define HW_ETH_H
 
-#ifndef CFG_CLI_H
-#define CFG_CLI_H
+#include <cfg/compiler.h>
 
-/**
- * Module logging level.
- *
- * $WIZ$ type = "enum"
- * $WIZ$ value_list = "log_level"
- */
-#define CLI_LOG_LEVEL      LOG_LVL_INFO
+extern uint8_t mac_addr[6];
 
-/**
- * Module logging format.
- *
- * $WIZ$ type = "enum"
- * $WIZ$ value_list = "log_format"
- */
-#define CLI_LOG_FORMAT     LOG_FMT_TERSE
+#define PHY_HW_INIT() do { /* Implement me! */ } while (0)
 
-
-/**
- * Default promt string.
- *
- * $WIZ$ type = "str"
- */
-#define CONFIG_CLI_PROMT_STR           ">> "
-
-#endif /* CFG_CLI_H */
+#endif /* HW_ETH_H */
