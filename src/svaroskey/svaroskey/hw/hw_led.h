@@ -50,12 +50,12 @@
 
 #define LED_ON()							\
 		do {							\
-			stm32_gpioPinWrite(LED_GPIO_BASE, LED_PIN, 1);	\
+			stm32_gpioPinWrite(LED_GPIO_BASE, LED_PIN, 0);	\
 		} while (0)
 
 #define LED_OFF()							\
 		do {							\
-			stm32_gpioPinWrite(LED_GPIO_BASE, LED_PIN, 0);	\
+			stm32_gpioPinWrite(LED_GPIO_BASE, LED_PIN, 1);	\
 		} while (0)
 
 #define LED_INIT()							\
