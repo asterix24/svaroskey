@@ -20,7 +20,7 @@ typedef struct
 
 typedef struct
 {
-	keybtn_t keys[CONFIG_KEYMAP_BTNNUM];
+	keybtn_t keys[1];
 } keymap_t;
 
 static keymap_t keymap =
