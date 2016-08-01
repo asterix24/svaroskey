@@ -10,6 +10,7 @@ svaroskey_PROGRAMMER_PORT = none
 # Files included by the user.
 svaroskey_USER_CSRC = \
 	$(svaroskey_SRC_PATH)/main.c \
+	$(svaroskey_SRC_PATH)/keymap.c \
 	#
 
 # Files included by the user.

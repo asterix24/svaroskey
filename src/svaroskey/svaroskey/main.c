@@ -66,6 +66,7 @@
 #include <drv/kbd.h>
 #include <drv/timer.h>
 #include <drv/usbkbd.h>
+#include <keymap.h>
 
 #include <kern/proc.h>
 
@@ -92,43 +93,31 @@ static void init(void)
 	/* Initialize the USB keyboard device */
 	usbkbd_init(0);
 
-	KEYMAP_INIT();
+	/* Initialize keymap */
+	keymap_init();
 }
 
-static bool is_on = false;
-
-/* Simulate the pression and release of a key on the keyboard */
-static void usb_send_key_on(uint8_t mod, uint8_t c)
+/* Send scan code */
+static void usb_send_key(uint8_t mod, uint8_t c)
 {
 	usbkbd_sendEvent(mod, c);
-	is_on = true;
 }
 
-/* Simulate the pression and release of a key on the keyboard */
-static void usb_send_key_off(void)
+static void NORETURN scan_proc(void)
 {
-	if (is_on)
-	{
-		usbkbd_sendEvent(0, 0);
-		is_on = false;
-	}
-}
+	keystate_t * state;
 
-static void NORETURN led_proc(void)
-{
-	/* Periodically blink the led (toggle each 100 ms) */
+	/* Periodically scan the keyboard */
 	while (1)
 	{
-		if (KEYMAP_READ(8, 0))
-		{
-			LED_ON();
-			usb_send_key_on(0, 0x08);
-		}
-		else
-		{
+		keymap_scan();
+
+		while ((state = keymap_get_next()) != NULL) {
+			usb_send_key(state->mod, state->scan);
 			LED_OFF();
-			usb_send_key_off();
 		}
+
+		timer_delay(1);
 	}
 }
 
@@ -138,7 +127,7 @@ int main(void)
 	init();
 
 	/* Sample process */
-	proc_new(led_proc, NULL, KERN_MINSTACKSIZE, NULL);
+	proc_new(scan_proc, NULL, KERN_MINSTACKSIZE, NULL);
 
 	while (1)
 		cpu_relax();
