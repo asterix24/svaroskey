@@ -398,6 +398,14 @@ void i2c_hw_cleanup(I2c *i2c, int dev)
 {
 	(void)dev;
 
+#if CPU_CM3_STM32F1
+
+	/* Set gpio to use I2C driver */
+	stm32_gpioPinConfig((struct stm32_gpio *)GPIOB_BASE, i2c->hw->pin_mask,
+				GPIO_MODE_IN_FLOATING, GPIO_SPEED_50MHZ);
+
+	RCC->APB2ENR &= ~RCC_APB2_GPIOB;
+#else
 	stm32_gpioPinConfig(GPIOx(i2c->hw->scl_gpio), BV(i2c->hw->scl_pin),
 			    GPIO_MODE_IN_FLOATING, GPIO_SPEED_50MHZ);
 	stm32_gpioPinConfig(GPIOx(i2c->hw->sda_gpio), BV(i2c->hw->sda_pin),
@@ -407,4 +415,5 @@ void i2c_hw_cleanup(I2c *i2c, int dev)
 	RCC_GPIO_DISABLE(i2c->hw->scl_gpio);
 
 	RCC->APB1ENR &= ~i2c->hw->clk_i2c_en;
+#endif
 }
