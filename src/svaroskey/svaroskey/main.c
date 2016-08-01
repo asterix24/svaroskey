@@ -56,6 +56,7 @@
  */
 
 #include "hw/hw_led.h"
+#include "hw/hw_keymap.h"
 
 #include <cfg/debug.h>
 
@@ -90,42 +91,44 @@ static void init(void)
 
 	/* Initialize the USB keyboard device */
 	usbkbd_init(0);
+
+	KEYMAP_INIT();
+}
+
+static bool is_on = false;
+
+/* Simulate the pression and release of a key on the keyboard */
+static void usb_send_key_on(uint8_t mod, uint8_t c)
+{
+	usbkbd_sendEvent(mod, c);
+	is_on = true;
 }
 
 /* Simulate the pression and release of a key on the keyboard */
-static void usb_send_key(uint8_t mod, uint8_t c)
+static void usb_send_key_off(void)
 {
-	usbkbd_sendEvent(mod, c);
-	usbkbd_sendEvent(0, 0);
+	if (is_on)
+	{
+		usbkbd_sendEvent(0, 0);
+		is_on = false;
+	}
 }
-
-/* XXX: note that these scancodes are valid only with the US keyboard layout */
-static const uint16_t keys[] =
-{
-	/* http:// */
-	0x000b, 0x0017, 0x0017, 0x0013, 0x2033, 0x0038, 0x0038,
-	/* www. */
-	0x001a, 0x001a, 0x001a, 0x0037,
-	/* bertos. */
-	0x0005, 0x0008, 0x0015, 0x0017, 0x0012, 0x0016, 0x0037,
-	/* org. */
-	0x0012, 0x0015, 0x000a,
-	/* \n */
-	0x0028,
-};
 
 static void NORETURN led_proc(void)
 {
-	int i;
-
 	/* Periodically blink the led (toggle each 100 ms) */
-	for (i = 0; ; i = !i)
+	while (1)
 	{
-		if (i)
+		if (KEYMAP_READ(8, 0))
+		{
 			LED_ON();
+			usb_send_key_on(0, 0x08);
+		}
 		else
+		{
 			LED_OFF();
-		timer_delay(100);
+			usb_send_key_off();
+		}
 	}
 }
 
@@ -137,17 +140,6 @@ int main(void)
 	/* Sample process */
 	proc_new(led_proc, NULL, KERN_MINSTACKSIZE, NULL);
 
-	kprintf("USB HID Keyboard configured\n");
-	kbd_setRepeatMask(K_WAKEUP);
-
 	while (1)
-	{
-		unsigned int i;
-
-		/* Wait until the WAKE_UP button is pressed */
-		kbd_get();
-		/* Send the keyboard scancodes */
-		for (i = 0; i < countof(keys); i++)
-			usb_send_key((keys[i] & 0xff00) >> 8, keys[i] & 0xff);
-	}
+		cpu_relax();
 }
