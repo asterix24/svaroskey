@@ -66,6 +66,8 @@
 #include <drv/timer.h>
 #include <drv/usbkbd.h>
 
+#include <kern/proc.h>
+
 static void init(void)
 {
 	/* Enable all the interrupts */
@@ -73,12 +75,19 @@ static void init(void)
 
 	/* Initialize debugging module (allow kprintf(), etc.) */
 	kdbg_init();
+
 	/* Initialize system timer */
 	timer_init();
+
 	/* Initialize LED driver */
 	LED_INIT();
+
+	/* Kernel initialization */
+	proc_init();
+
 	/* Enable the WAKE_UP button on the board */
 	kbd_init();
+
 	/* Initialize the USB keyboard device */
 	usbkbd_init(0);
 }
@@ -105,13 +114,32 @@ static const uint16_t keys[] =
 	0x0028,
 };
 
+static void NORETURN led_proc(void)
+{
+	int i;
+
+	/* Periodically blink the led (toggle each 100 ms) */
+	for (i = 0; ; i = !i)
+	{
+		if (i)
+			LED_ON();
+		else
+			LED_OFF();
+		timer_delay(100);
+	}
+}
+
 int main(void)
 {
 	/* Hardware initialization */
 	init();
 
+	/* Sample process */
+	proc_new(led_proc, NULL, KERN_MINSTACKSIZE, NULL);
+
 	kprintf("USB HID Keyboard configured\n");
 	kbd_setRepeatMask(K_WAKEUP);
+
 	while (1)
 	{
 		unsigned int i;
