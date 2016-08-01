@@ -4,6 +4,7 @@
 #include <io/stm32.h>
 
 #include <drv/gpio_stm32.h>
+#include <drv/clock_stm32.h>
 
 #define KEY_ROW_PINS      (0xE7F3)
 #define KEY_COL_PINS      (0x73F3)
