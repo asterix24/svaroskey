@@ -40,4 +40,5 @@ svaroskey_USER_CPPAFLAGS = \
 svaroskey_USER_CPPFLAGS = \
 	-fno-strict-aliasing \
 	-fwrapv \
+	-O2 \
 	#
