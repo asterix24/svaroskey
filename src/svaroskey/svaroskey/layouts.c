@@ -1,6 +1,8 @@
+#include "cfg/cfg_keymap.h"
+
+#include "layouts.h"
 #include "keymap.h"
 #include "keycodes.h"
-#include "cfg/cfg_keymap.h"
 
 #define CONFIG_LAYOUT_LATEST_REVISION 0
 
@@ -10,7 +12,7 @@
 #error CONFIG_LAYOUT_REVISION is not valid.
 #endif
 
-static const keybinding_t keyboard_layout[] = {
+KeyBinding keymap_layout[LAYOUT_SIZE] = {
 #if (CONFIG_LAYOUT_REVISION == 0)
 	{ 0,    KEY_ESCAPE        },
 	{ 1,    KEY_F1            },

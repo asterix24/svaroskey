@@ -1,7 +1,9 @@
-#include "keymap.h"
-
 #include "cfg/cfg_keymap.h"
 #include "hw/hw_keymap.h"
+
+#include "keymap.h"
+#include "layouts.h"
+#include "mappings.h"
 
 #include <cfg/debug.h>
 
@@ -9,52 +11,38 @@ typedef enum
 {
 	KEY_RELEASED = 0,
 	KEY_PRESSED,
-} state_t;
+} KeyState;
 
-typedef struct
-{
-	char code;
-	uint16_t row, col;
-	state_t curr, prev;
-} keybtn_t;
+static KeyState current_state[LAYOUT_SIZE] = { KEY_RELEASED };
+static KeyState previous_state[LAYOUT_SIZE] = { KEY_RELEASED };
 
-typedef struct
-{
-	keybtn_t keys[1];
-} keymap_t;
-
-static keymap_t keymap =
-{
-	.keys =
-	{
-		{ .code = 0x08, .row = 8, .col = 0, .curr = KEY_RELEASED, .prev = KEY_RELEASED }
-	}
-};
-
-static keystate_t state;
+static scancode_t code;
 static bool valid = false;
 
-keystate_t * keymap_get_next(void)
+scancode_t * keymap_get_next_code(void)
 {
 	if (valid) {
 		valid = false;
-		return &state;
+		return &code;
 	}
 	return NULL;
 }
 
-static void keymap_upd_key(keybtn_t *key)
+static void keymap_update_key(int i)
 {
+	// Get key from layout
+	KeyBinding * key = &keymap_layout[i];
+	KeyMapping * kmap = &keymap_mapping[key->mapping_id];
+
 	// Save current state
-	key->prev = key->curr;
+	previous_state[i] = current_state[i];
 
 	// Update state
-	key->curr = (KEYMAP_READ(key->row, key->col)) ? KEY_PRESSED : KEY_RELEASED;
+	current_state[i] = (KEYMAP_READ(kmap)) ? KEY_PRESSED : KEY_RELEASED;
 
-	if (key->prev != key->curr)
+	if (current_state[i] != previous_state[i])
 	{
-		state.mod = 0;
-		state.scan = (key->curr == KEY_RELEASED) ? 0 : key->code;
+		code = 0x00FF & ((current_state[i] == KEY_RELEASED) ? 0 : key->code);
 		valid = true;
 	}
 }
@@ -64,9 +52,8 @@ void keymap_scan(void)
 	int i;
 
 	// Scan all the configured keys
-	// TODO: fix the iteration number after the mapping is in place
-	for (i = 0; i < 1; ++i)
-		keymap_upd_key(&keymap.keys[i]);
+	for (i = 0; i < LAYOUT_SIZE; ++i)
+		keymap_update_key(i);
 }
 
 void keymap_init(void)
@@ -74,5 +61,5 @@ void keymap_init(void)
 	// Low-level hardware initialization
 	KEYMAP_INIT();
 
-	// TODO: initialize keymap from EEPROM
+	// TODO: initialize layout from EEPROM
 }

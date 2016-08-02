@@ -14,7 +14,7 @@
 #define KPB 1
 #define KPC 2
 
-static const keymapping_t keyboard_mapping[] = {
+KeyMapping keymap_mapping[] = {
 #if (CONFIG_MAPPING_REVISION == 0)
     { KPA, 0,  KPB, 0  }, { KPA, 0,  KPB, 1  }, { KPA, 0,  KPB, 3  },
     { KPA, 0,  KPB, 4  }, { KPA, 0,  KPB, 5  }, { KPA, 0,  KPB, 6  },

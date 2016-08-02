@@ -1,6 +1,8 @@
 #ifndef HW_KEYMAP_H
 #define HW_KEYMAP_H
 
+#include "keymap.h"
+
 #include <io/stm32.h>
 
 #include <drv/gpio_stm32.h>
@@ -11,14 +13,7 @@
 #define KEY_ROW_GPIO_BASE ((struct stm32_gpio *)GPIOA_BASE)
 #define KEY_COL_GPIO_BASE ((struct stm32_gpio *)GPIOB_BASE)
 
-INLINE uint16_t KEYMAP_READ(uint16_t row, uint16_t col) {
-	/* Select row */
-	stm32_gpioPinConfig(KEY_ROW_GPIO_BASE, BV(row),
-			GPIO_MODE_OUT_PP, GPIO_SPEED_50MHZ);
-	stm32_gpioPinWrite(KEY_ROW_GPIO_BASE, BV(row), true);
-	/* Read column */
-	return stm32_gpioPinRead(KEY_COL_GPIO_BASE, BV(col));
-}
+bool KEYMAP_READ(KeyMapping * k);
 
 #define KEYMAP_INIT()                                               \
 	do {                                                            \

@@ -7,14 +7,9 @@ typedef uint16_t scancode_t;
 
 typedef struct
 {
-	char mod, scan;
-} keystate_t;
-
-typedef struct
-{
-	uint16_t id;
+	uint16_t mapping_id;
 	scancode_t code;
-} keybinding_t;
+} KeyBinding;
 
 typedef struct
 {
@@ -22,9 +17,9 @@ typedef struct
 	uint8_t row_pin;
 	uint8_t col_port;
 	uint8_t col_pin;
-} keymapping_t;
+} KeyMapping;
 
-keystate_t * keymap_get_next(void);
+scancode_t * keymap_get_next_code(void);
 void keymap_scan(void);
 void keymap_init(void);
 

@@ -98,22 +98,22 @@ static void init(void)
 }
 
 /* Send scan code */
-static void usb_send_key(uint8_t mod, uint8_t c)
+static void usb_send_key(scancode_t code)
 {
-	usbkbd_sendEvent(mod, c);
+	usbkbd_sendEvent((code & 0xff00) >> 8, code & 0x00ff);
 }
 
 static void NORETURN scan_proc(void)
 {
-	keystate_t * state;
+	scancode_t * code;
 
 	/* Periodically scan the keyboard */
 	while (1)
 	{
 		keymap_scan();
 
-		while ((state = keymap_get_next()) != NULL) {
-			usb_send_key(state->mod, state->scan);
+		while ((code = keymap_get_next_code()) != NULL) {
+			usb_send_key(*code);
 			LED_OFF();
 		}
 
