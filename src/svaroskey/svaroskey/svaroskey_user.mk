@@ -12,6 +12,7 @@ svaroskey_USER_CSRC = \
 	$(svaroskey_SRC_PATH)/main.c \
 	$(svaroskey_SRC_PATH)/keymap.c \
 	$(svaroskey_SRC_PATH)/layouts.c \
+	$(svaroskey_SRC_PATH)/mappings.c \
 	#
 
 # Files included by the user.

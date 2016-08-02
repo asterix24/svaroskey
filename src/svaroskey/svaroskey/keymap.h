@@ -16,6 +16,14 @@ typedef struct
 	scancode_t code;
 } keybinding_t;
 
+typedef struct
+{
+	uint8_t row_port;
+	uint8_t row_pin;
+	uint8_t col_port;
+	uint8_t col_pin;
+} keymapping_t;
+
 keystate_t * keymap_get_next(void);
 void keymap_scan(void);
 void keymap_init(void);

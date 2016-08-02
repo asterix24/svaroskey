@@ -10,7 +10,7 @@
 #error CONFIG_LAYOUT_REVISION is not valid.
 #endif
 
-static const keybinding_t layout[] = {
+static const keybinding_t keyboard_layout[] = {
 #if (CONFIG_LAYOUT_REVISION == 0)
 	{ 0,    KEY_ESCAPE        },
 	{ 1,    KEY_F1            },
