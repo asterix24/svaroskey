@@ -2,8 +2,12 @@
 #include "keycodes.h"
 #include "cfg/cfg_keymap.h"
 
+#define CONFIG_LAYOUT_LATEST_REVISION 0
+
 #if !defined CONFIG_LAYOUT_REVISION
 #error CONFIG_LAYOUT_REVISION is not defined.
+#elif (CONFIG_LAYOUT_REVISION > CONFIG_LAYOUT_LATEST_REVISION)
+#error CONFIG_LAYOUT_REVISION is not valid.
 #endif
 
 static const keybinding_t layout[] = {
