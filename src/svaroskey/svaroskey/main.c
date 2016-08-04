@@ -55,6 +55,8 @@
  *
  */
 
+#include "keymap.h"
+
 #include "hw/hw_led.h"
 #include "hw/hw_keymap.h"
 
@@ -64,11 +66,13 @@
 #include <cpu/power.h>
 
 #include <drv/kbd.h>
+#include <drv/sipo.h>
 #include <drv/timer.h>
 #include <drv/usbkbd.h>
-#include <keymap.h>
 
 #include <kern/proc.h>
+
+static Sipo sipo;
 
 static void init(void)
 {
@@ -95,6 +99,9 @@ static void init(void)
 
 	/* Initialize keymap */
 	keymap_init();
+
+	/* Initialize SIPO */
+	sipo_init(&sipo, 0, SIPO_DATAORDER_LSB);
 }
 
 /* Send scan code */
@@ -130,5 +137,12 @@ int main(void)
 	proc_new(scan_proc, NULL, KERN_MINSTACKSIZE, NULL);
 
 	while (1)
-		cpu_relax();
+	{
+		for (int i = 0; i < 3; i++) {
+			kfile_putc(BV(i+1) | BV(6) | BV(7), &sipo.fd);
+			timer_delay(1000);
+			kfile_putc(0x00, &sipo.fd);
+			timer_delay(1000);
+		}
+	}
 }

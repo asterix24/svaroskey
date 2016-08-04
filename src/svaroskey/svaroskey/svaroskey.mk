@@ -28,6 +28,7 @@ svaroskey_WIZARD_CSRC = \
 	bertos/drv/i2c.c \
 	bertos/drv/i2c_bitbang.c \
 	bertos/drv/kbd.c \
+	bertos/drv/sipo.c \
 	bertos/drv/timer.c \
 	bertos/drv/usbkbd.c \
 	bertos/io/kblock.c \
