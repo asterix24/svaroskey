@@ -2,3 +2,7 @@
 Version=1.0
 [Project1]
 ProjectPath=controller\controller.PrjPcb
+[Project2]
+ProjectPath=display\display.PrjPcb
+[Project3]
+ProjectPath=petroskey\petroskey.PrjPcb
