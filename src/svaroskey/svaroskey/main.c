@@ -72,7 +72,46 @@
 
 #include <kern/proc.h>
 
+#define MAX_BRIGHTNESS 100
+#define NUM_LED_ROWS   8
+#define NUM_LED_COLS   8
+#define NUM_LEDS       (NUM_LED_COLS * NUM_LED_ROWS)
+
+static Timer timer;
 static Sipo sipo;
+
+static uint8_t brightness[NUM_LEDS] = { [0] = 1 };
+
+static void timer_callback(void *arg)
+{
+	(void)arg;
+
+	static uint16_t curr_brightness_slot = 0;
+	static uint16_t curr_led_slot = 0;
+	static uint16_t iteration = 0;
+
+	kfile_putc((curr_brightness_slot < brightness[curr_led_slot]) ? 0xff : 0x00, &sipo.fd);
+
+	if (curr_led_slot < (NUM_LED_COLS - 1))
+		curr_led_slot++;
+	else
+	{
+		curr_led_slot = 0;
+		if (curr_brightness_slot < (MAX_BRIGHTNESS - 1))
+			curr_brightness_slot++;
+		else
+		{
+			curr_brightness_slot = 0;
+
+			if ((++iteration) == 1) {
+				iteration = 0;
+				brightness[0] = (brightness[0] + 1) % MAX_BRIGHTNESS;
+			}
+		}
+	}
+
+	timer_add(&timer);
+}
 
 static void init(void)
 {
@@ -134,15 +173,12 @@ int main(void)
 	init();
 
 	/* Sample process */
-	proc_new(scan_proc, NULL, KERN_MINSTACKSIZE, NULL);
+	//proc_new(scan_proc, NULL, KERN_MINSTACKSIZE, NULL);
+
+	timer_setDelay(&timer, us_to_ticks(5));
+	timer_setSoftint(&timer, timer_callback, NULL);
+	timer_add(&timer);
 
 	while (1)
-	{
-		for (int i = 0; i < 3; i++) {
-			kfile_putc(BV(i+1) | BV(6) | BV(7), &sipo.fd);
-			timer_delay(1000);
-			kfile_putc(0x00, &sipo.fd);
-			timer_delay(1000);
-		}
-	}
+		;
 }
