@@ -95,7 +95,7 @@ static const UsbConfigDesc usb_hid_config_descriptor =
 	.bConfigurationValue = 1,
 	.iConfiguration = 0,
 	.bmAttributes = USB_CONFIG_ATT_ONE,
-	.bMaxPower = 50, /* 100 mA */
+	.bMaxPower = 250, /* 500 mA */
 };
 
 static const UsbInterfaceDesc usb_hid_interface_descriptor =
