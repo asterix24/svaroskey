@@ -5,3 +5,4 @@ Status Report.Txt
 out/
 *.Dat
 .DS_Store
+*.htm
