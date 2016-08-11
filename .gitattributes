@@ -1,0 +1,17 @@
+*.llb binary
+*.olb binary
+*.dsn binary
+*.max binary
+*.mnl binary
+*.xls binary
+*.dwg binary
+*.dxf binary
+*.OutJob binary
+*.PrjPcb binary
+*.SchLib binary
+*.PrjPcbStructure binary
+*.PcbDoc binary
+*.PcbLib binary
+*.pdf binary
+
+
