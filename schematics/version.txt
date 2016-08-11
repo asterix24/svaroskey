@@ -1,5 +1,5 @@
-[keyboard]
-name = "Svarosky Keyboard"
+[petroskey]
+name = "petroskey Keyboard"
 hw_ver = "1"
 pcb_ver = "A"
-data = "23/7/2016"
+date = "23/7/2016"
