@@ -141,10 +141,6 @@ GenerateClassCluster=0
 DocumentUniqueId=
 
 [GeneratedDocument1]
-DocumentPath=..\Assembly\petroskey\bom-petroskey.xls
-DItemRevisionGUID=
-
-[GeneratedDocument2]
 DocumentPath=..\Assembly\petroskey\Pick Place for petroskey.txt
 DItemRevisionGUID=
 
