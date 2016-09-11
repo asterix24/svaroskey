@@ -70,6 +70,10 @@ DItemRevisionGUID=
 GenerateClassCluster=0
 DocumentUniqueId=SIEETWRK
 
+[GeneratedDocument1]
+DocumentPath=out\Design Rule Check - display.html
+DItemRevisionGUID=
+
 [Configuration1]
 Name=Default Configuration
 ParameterCount=0
