@@ -15,7 +15,7 @@ LifeCycleDefinitionGUID=
 RevisionNamingSchemeGUID=
 
 [OutputGroup1]
-Name=petroskey.OutJob
+Name=display.OutJob
 Description=
 TargetOutputMedium=Pdf
 VariantName=[No Variations]
@@ -332,7 +332,7 @@ MarkPortsId2=0
 GenerateTOC=1
 ShowComponentParameters2=1
 GlobalBookmarks2=0
-OutputFilePath3=C:\Users\asterix\src\svaroskey\schematics\Pdf\petroskey\
+OutputFilePath3=C:\Users\asterix\src\svaroskey\schematics\Pdf\display\
 ReleaseManaged3=0
 OutputBasePath3=..\Pdf\
 OutputPathMedia3==ProjectName
@@ -410,7 +410,7 @@ GlobalBookmarks6=0
 [GeneratedFilesSettings]
 RelativeOutputPath2=C:\Users\nessuno\Dropbox\cadlib\protel\template\project_2l_template\Assembly\prj_name\prj_name.PDF
 OpenOutputs2=0
-RelativeOutputPath3=C:\Users\asterix\src\svaroskey\schematics\Pdf\petroskey\
+RelativeOutputPath3=C:\Users\asterix\src\svaroskey\schematics\Pdf\display\
 OpenOutputs3=0
 RelativeOutputPath4=C:\Users\nessuno\Dropbox\cadlib\protel\template\project_2l_template\Assembly\prj_name\
 OpenOutputs4=0
