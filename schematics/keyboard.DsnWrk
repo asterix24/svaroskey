@@ -6,3 +6,5 @@ ProjectPath=display\display.PrjPcb
 ProjectPath=petroskey\petroskey.PrjPcb
 [Project3]
 ProjectPath=controller\controller.PrjPcb
+[Project4]
+ProjectPath=panel\panel.PrjPcb
