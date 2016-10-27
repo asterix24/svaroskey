@@ -57,7 +57,6 @@
 
 #include "keymap.h"
 
-#include "hw/hw_led.h"
 #include "hw/hw_keymap.h"
 
 #include <cfg/debug.h>
@@ -65,7 +64,6 @@
 #include <cpu/irq.h>
 #include <cpu/power.h>
 
-#include <drv/kbd.h>
 #include <drv/sipo.h>
 #include <drv/timer.h>
 #include <drv/usbkbd.h>
@@ -113,8 +111,22 @@ static void timer_callback(void *arg)
 	timer_add(&timer);
 }
 
+static void hw_init(void)
+{
+	reg32_t *AFIO;
+
+	/* Disable JTAG function on PB3 and use it as GPIO */
+	RCC->APB2ENR |= RCC_APB2_AFIO;
+	AFIO = (reg32_t *)(AFIO_BASE + 4);
+	*AFIO &= ~(0x07000000);
+	*AFIO |=  (0x04000000);
+}
+
 static void init(void)
 {
+	/* Initialize low-level platform */
+	hw_init();
+
 	/* Enable all the interrupts */
 	IRQ_ENABLE;
 
@@ -124,14 +136,8 @@ static void init(void)
 	/* Initialize system timer */
 	timer_init();
 
-	/* Initialize LED driver */
-	LED_INIT();
-
 	/* Kernel initialization */
 	proc_init();
-
-	/* Enable the WAKE_UP button on the board */
-	kbd_init();
 
 	/* Initialize the USB keyboard device */
 	usbkbd_init(0);
@@ -140,7 +146,7 @@ static void init(void)
 	keymap_init();
 
 	/* Initialize SIPO */
-	sipo_init(&sipo, 0, SIPO_DATAORDER_LSB);
+//	sipo_init(&sipo, 0, SIPO_DATAORDER_LSB);
 }
 
 /* Send scan code */
@@ -160,7 +166,6 @@ static void NORETURN scan_proc(void)
 
 		while ((code = keymap_get_next_code()) != NULL) {
 			usb_send_key(*code);
-			LED_OFF();
 		}
 
 		timer_delay(1);
@@ -173,12 +178,13 @@ int main(void)
 	init();
 
 	/* Sample process */
-	//proc_new(scan_proc, NULL, KERN_MINSTACKSIZE, NULL);
+	proc_new(scan_proc, NULL, KERN_MINSTACKSIZE, NULL);
 
-	timer_setDelay(&timer, us_to_ticks(5));
-	timer_setSoftint(&timer, timer_callback, NULL);
-	timer_add(&timer);
+	//timer_setDelay(&timer, us_to_ticks(5));
+	//timer_setSoftint(&timer, timer_callback, NULL);
+	//timer_add(&timer);
 
-	while (1)
-		;
+	while (1) {
+		cpu_relax();
+	}
 }
