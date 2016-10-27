@@ -1,5 +1,11 @@
 [petroskey]
-name = "petroskey Keyboard"
-hw_ver = "1"
+name = "Petroskey Keyboard"
+hw_ver = "0"
 pcb_ver = "A"
-date = "23/7/2016"
+date = "27/10/2016"
+
+[controller]
+name = "Keyboard Controller"
+hw_ver = "0"
+pcb_ver = "A"
+date = "27/10/2016"
