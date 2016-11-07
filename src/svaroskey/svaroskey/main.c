@@ -149,24 +149,18 @@ static void init(void)
 //	sipo_init(&sipo, 0, SIPO_DATAORDER_LSB);
 }
 
-/* Send scan code */
-static void usb_send_key(scancode_t code)
-{
-	usbkbd_sendEvent((code & 0xff00) >> 8, code & 0x00ff);
-}
-
 static void NORETURN scan_proc(void)
 {
-	scancode_t * code;
+	uint8_t * codes;
+	uint8_t * mods;
 
 	/* Periodically scan the keyboard */
 	while (1)
 	{
 		keymap_scan();
 
-		while ((code = keymap_get_next_code()) != NULL) {
-			usb_send_key(*code);
-		}
+		if (keymap_get_next_code(mods, codes))
+			usbkbd_sendEvent(*mods, codes);
 
 		timer_delay(1);
 	}

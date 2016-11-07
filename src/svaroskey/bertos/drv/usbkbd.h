@@ -46,7 +46,7 @@
 #ifndef USBKBD_H
 #define USBKBD_H
 
-void usbkbd_sendEvent(uint8_t mod, uint8_t code);
+void usbkbd_sendEvent(uint8_t mod, uint8_t * codes);
 int usbkbd_init(int unit);
 
 #endif /* USBKBD_H */

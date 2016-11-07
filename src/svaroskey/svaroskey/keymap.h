@@ -19,7 +19,7 @@ typedef struct
 	uint8_t col_pin;
 } KeyMapping;
 
-scancode_t * keymap_get_next_code(void);
+bool keymap_get_next_code(uint8_t * mods, uint8_t * codes);
 void keymap_scan(void);
 void keymap_init(void);
 

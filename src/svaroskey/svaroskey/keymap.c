@@ -7,37 +7,24 @@
 
 #include <cfg/debug.h>
 
-typedef enum
-{
-	KEY_RELEASED = 0,
-	KEY_PRESSED,
-} KeyState;
+static uint8_t previous_mods = 0;
+static uint8_t mods = 0;
 
-static KeyState current_state[LAYOUT_SIZE] = { KEY_RELEASED };
-static KeyState previous_state[LAYOUT_SIZE] = { KEY_RELEASED };
+static int previous_codes_num = 0;
+static int codes_num = 0;
+static uint8_t codes[6] = { 0 };
 
-static scancode_t mods = 0;
-static scancode_t code;
 static bool valid = false;
 
-scancode_t * keymap_get_next_code(void)
+bool keymap_get_next_code(uint8_t * pmods, uint8_t * pcodes)
 {
-	if (valid) {
+	if (valid && pmods) {
 		valid = false;
-		return &code;
+		pmods = &mods;
+		pcodes = codes;
+		return true;
 	}
-	return NULL;
-}
-
-static void keymap_update_mods(int i)
-{
-	// Get key from layout
-	KeyBinding * key = &keymap_layout[i];
-	KeyMapping * kmap = &keymap_mapping[key->mapping_id];
-
-	// Check if the key is a modifier key
-	if (key->code > 0xff && KEYMAP_READ(kmap))
-		mods |= key->code;
+	return false;
 }
 
 static void keymap_update_key(int i)
@@ -46,19 +33,22 @@ static void keymap_update_key(int i)
 	KeyBinding * key = &keymap_layout[i];
 	KeyMapping * kmap = &keymap_mapping[key->mapping_id];
 
-	// Save current state
-	previous_state[i] = current_state[i];
+	// For non-modifiers we only track 6 at most.
+	if (key->code <= 0xff && codes_num == 6)
+		return;
 
-	// Update state
-	current_state[i] = (KEYMAP_READ(kmap)) ? KEY_PRESSED : KEY_RELEASED;
+	// We only care about pressed keys
+	if (!(KEYMAP_READ(kmap)))
+		return;
 
-	if (key->code <= 0xff && current_state[i] != previous_state[i])
-	{
-		code = (current_state[i] == KEY_RELEASED) ? 0 : key->code;
+	// Check if the key is a modifier key
+	if (key->code > 0xff)
+		mods |= (key->code >> 8);
+	// Otherwise see if it is different from before
+	else if (codes[codes_num++] != key->code) {
 		valid = true;
+		codes[codes_num - 1] = (0xff & key->code);
 	}
-
-	code |= mods;
 }
 
 void keymap_scan(void)
@@ -66,16 +56,25 @@ void keymap_scan(void)
 	int i;
 
 	// Reset keycodes
-	code = 0;
 	mods = 0;
-
-	// Scan all the modifier keys
-	for (i = 0; i < LAYOUT_SIZE; ++i)
-		keymap_update_mods(i);
+	codes_num = 0;
 
 	// Scan all the configured keys
 	for (i = 0; i < LAYOUT_SIZE; ++i)
 		keymap_update_key(i);
+
+	// If mods changed or number of keys pressed changed, we update
+	if (previous_mods != mods || previous_codes_num != codes_num)
+		valid = true;
+
+	if (valid) {
+		previous_mods = mods;
+		previous_codes_num = codes_num;
+
+		// Clean the rest of the keys
+		for (i = codes_num; i < 6; ++i)
+			codes[i] = 0;
+	}
 }
 
 void keymap_init(void)
