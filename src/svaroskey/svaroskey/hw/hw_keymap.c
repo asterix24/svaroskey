@@ -1,4 +1,5 @@
 #include "hw_keymap.h"
+#include <cfg/cfg_keymap.h>
 
 #include <drv/timer.h>
 
