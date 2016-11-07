@@ -45,7 +45,8 @@ void KEYMAP_INIT(void) {
 }
 
 bool KEYMAP_READ(KeyMapping * k) {
-	int wPort, wPin, rPort, rPin;
+	struct stm32_gpio *wPort, *rPort;
+	int wPin, rPin;
 	bool ret;
 
 #ifdef CONFIG_INVERT_LAYOUT
