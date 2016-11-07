@@ -16,6 +16,7 @@ typedef enum
 static KeyState current_state[LAYOUT_SIZE] = { KEY_RELEASED };
 static KeyState previous_state[LAYOUT_SIZE] = { KEY_RELEASED };
 
+static scancode_t mods = 0;
 static scancode_t code;
 static bool valid = false;
 
@@ -26,6 +27,17 @@ scancode_t * keymap_get_next_code(void)
 		return &code;
 	}
 	return NULL;
+}
+
+static void keymap_update_mods(int i)
+{
+	// Get key from layout
+	KeyBinding * key = &keymap_layout[i];
+	KeyMapping * kmap = &keymap_mapping[key->mapping_id];
+
+	// Check if the key is a modifier key
+	if (key->code > 0xff && KEYMAP_READ(kmap))
+		mods |= key->code;
 }
 
 static void keymap_update_key(int i)
@@ -40,16 +52,26 @@ static void keymap_update_key(int i)
 	// Update state
 	current_state[i] = (KEYMAP_READ(kmap)) ? KEY_PRESSED : KEY_RELEASED;
 
-	if (current_state[i] != previous_state[i])
+	if (key->code <= 0xff && current_state[i] != previous_state[i])
 	{
-		code = 0x00FF & ((current_state[i] == KEY_RELEASED) ? 0 : key->code);
+		code = (current_state[i] == KEY_RELEASED) ? 0 : key->code;
 		valid = true;
 	}
+
+	code |= mods;
 }
 
 void keymap_scan(void)
 {
 	int i;
+
+	// Reset keycodes
+	code = 0;
+	mods = 0;
+
+	// Scan all the modifier keys
+	for (i = 0; i < LAYOUT_SIZE; ++i)
+		keymap_update_mods(i);
 
 	// Scan all the configured keys
 	for (i = 0; i < LAYOUT_SIZE; ++i)
