@@ -4,7 +4,9 @@
 #include "keymap.h"
 
 #if (CONFIG_LAYOUT_REVISION == 0)
-#define LAYOUT_SIZE 104
+#define LAYOUT_SIZE 65
+#elif (CONFIG_LAYOUT_REVISION == 1)
+#define LAYOUT_SIZE 106
 #endif
 
 extern KeyBinding keymap_layout[LAYOUT_SIZE];
