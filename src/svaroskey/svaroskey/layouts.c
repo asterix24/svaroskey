@@ -161,8 +161,8 @@ KeyBinding keymap_layout[LAYOUT_SIZE] = {
 	{ 56,   KEY_F10           },
 	{ 57,   KEY_F11           },
 	{ 58,   KEY_F12           },
-	{ 59,   KEY_PRINTSCREEN   },
-	{ 60,   KEY_SCROLLLOCK    },
+	{ 59,   KEY_SCROLLLOCK    },
+	{ 60,   KEY_PRINTSCREEN   },
 	{ 61,   KEY_PAUSE         },
 
 	/* Row 8 */
