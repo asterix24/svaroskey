@@ -46,7 +46,16 @@
 #ifndef USBKBD_H
 #define USBKBD_H
 
-void usbkbd_sendEvent(uint8_t mod, uint8_t * codes);
+/**
+ * USB keyboard event descriptor.
+ */
+typedef struct UsbKbdEvent
+{
+	uint8_t mods;
+	uint8_t codes[6];
+} UsbKbdEvent;
+
+void usbkbd_sendEvent(UsbKbdEvent *event);
 int usbkbd_init(int unit);
 
 #endif /* USBKBD_H */

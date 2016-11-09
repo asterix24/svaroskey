@@ -151,16 +151,15 @@ static void init(void)
 
 static void NORETURN scan_proc(void)
 {
-	uint8_t * codes;
-	uint8_t * mods;
+	UsbKbdEvent *event;
 
 	/* Periodically scan the keyboard */
 	while (1)
 	{
 		keymap_scan();
 
-		if (keymap_get_next_code(mods, codes))
-			usbkbd_sendEvent(*mods, codes);
+		if ((event = keymap_get_next_code()) != NULL)
+			usbkbd_sendEvent(event);
 
 		timer_delay(1);
 	}

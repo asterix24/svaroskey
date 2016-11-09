@@ -281,14 +281,14 @@ static int usb_keyboard_hw_init(void)
 }
 
 /* Send a keyboard event */
-void usbkbd_sendEvent(uint8_t mod, uint8_t * codes)
+void usbkbd_sendEvent(UsbKbdEvent * event)
 {
 	int i;
-	if (!codes)
+	if (!event)
 		return;
-	report[0] = mod;
+	report[0] = event->mods;
 	for (i = 0; i < 6; ++i)
-		report[2 + i] = codes[i];
+		report[2 + i] = event->codes[i];
 	usb_endpointWrite(USB_HID_REPORT_EP, &report, sizeof(report));
 }
 
