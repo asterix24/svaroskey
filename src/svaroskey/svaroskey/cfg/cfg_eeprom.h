@@ -59,6 +59,6 @@
  *
  * $WIZ$ type = "boolean"
  */
-#define CONFIG_EEPROM_DISABLE_OLD_API  0
+#define CONFIG_EEPROM_DISABLE_OLD_API  1
 
 #endif /* CFG_EEPROM_H */

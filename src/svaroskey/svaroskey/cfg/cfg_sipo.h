@@ -26,17 +26,24 @@
  * invalidate any other reasons why the executable file might be covered by
  * the GNU General Public License.
  *
- * Copyright 2008 Develer S.r.l. (http://www.develer.com/)
- *
+ * Copyright 2012 Develer S.r.l. (http://www.develer.com/)
+ * All Rights Reserved.
  * -->
  *
- * \brief Configuration file for the ADS79xx module.
+ * \brief Configuration file for SIPO module.
  *
- * \author Francesco Sacchi <batt@develer.com>
+ * \author Daniele Basile <asterix@develer.com>
  */
 
-#ifndef CFG_ADS79XX_H
-#define CFG_ADS79XX_H
+#ifndef CFG_SIPO_H
+#define CFG_SIPO_H
+
+/**
+ * Check this to disable SIPO deprecated API support.
+ *
+ * $WIZ$ type = "boolean"
+ */
+#define CONFIG_SIPO_DISABLE_OLD_API   1
 
 /**
  * Module logging level.
@@ -44,48 +51,14 @@
  * $WIZ$ type = "enum"
  * $WIZ$ value_list = "log_level"
  */
-#define ADS79XX_LOG_LEVEL      LOG_LVL_INFO
+#define SIPO_LOG_LEVEL      LOG_LVL_INFO
 
 /**
- * Module logging format.
+ * module logging format.
  *
  * $WIZ$ type = "enum"
  * $WIZ$ value_list = "log_format"
  */
-#define ADS79XX_LOG_FORMAT     LOG_FMT_VERBOSE
+#define SIPO_LOG_FORMAT     LOG_FMT_TERSE
 
-/**
- * Clock Frequency for ADC conversion.
- * This frequency will be rounded down to an integer
- * submultiple of CPU_FREQ.
- *
- * $WIZ$ type = "int"
- * $WIZ$ supports = "at91"
- * $WIZ$ max = 5000000
- */
-#define CONFIG_ADS79XX_SAMPLE_RATE 12000
-
-
-/**
- * Clock Frequency for ADC TCP
- *
- * $WIZ$ type = "int"
- */
-#define CONFIG_ADCTCP_SAMPLE_RATE 3000
-
-/**
- * Adc channels
- *
- * $WIZ$ type = "int"
- */
-#define CONFIG_ADS79XX_CHANNELS 6
-
-/**
- * Adc pad bits
- *
- * $WIZ$ type = "int"
- */
-#define CONFIG_ADS79XX_PAD 4
-
-
-#endif /* CFG_ADS79XX_H */
+#endif /* CFG_SIPO_H */

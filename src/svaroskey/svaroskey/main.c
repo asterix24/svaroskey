@@ -55,71 +55,136 @@
  *
  */
 
-#include "hw/hw_led.h"
+#include "keymap.h"
+
+#include "hw/hw_keymap.h"
 
 #include <cfg/debug.h>
 
 #include <cpu/irq.h>
 #include <cpu/power.h>
 
-#include <drv/kbd.h>
+#include <drv/sipo.h>
 #include <drv/timer.h>
 #include <drv/usbkbd.h>
 
+#include <kern/proc.h>
+
+#define MAX_BRIGHTNESS 100
+#define NUM_LED_ROWS   8
+#define NUM_LED_COLS   8
+#define NUM_LEDS       (NUM_LED_COLS * NUM_LED_ROWS)
+
+static Timer timer;
+static Sipo sipo;
+
+static uint8_t brightness[NUM_LEDS] = { [0] = 1 };
+
+static void timer_callback(void *arg)
+{
+	(void)arg;
+
+	static uint16_t curr_brightness_slot = 0;
+	static uint16_t curr_led_slot = 0;
+	static uint16_t iteration = 0;
+
+	kfile_putc((curr_brightness_slot < brightness[curr_led_slot]) ? 0xff : 0x00, &sipo.fd);
+
+	if (curr_led_slot < (NUM_LED_COLS - 1))
+		curr_led_slot++;
+	else
+	{
+		curr_led_slot = 0;
+		if (curr_brightness_slot < (MAX_BRIGHTNESS - 1))
+			curr_brightness_slot++;
+		else
+		{
+			curr_brightness_slot = 0;
+
+			if ((++iteration) == 1) {
+				iteration = 0;
+				brightness[0] = (brightness[0] + 1) % MAX_BRIGHTNESS;
+			}
+		}
+	}
+
+	timer_add(&timer);
+}
+
+static void hw_init(void)
+{
+	reg32_t *AFIO;
+
+	/* Disable JTAG function on PB3 and use it as GPIO */
+	RCC->APB2ENR |= RCC_APB2_AFIO;
+	AFIO = (reg32_t *)(AFIO_BASE + 4);
+	*AFIO &= ~(0x07000000);
+	*AFIO |=  (0x04000000);
+}
+
 static void init(void)
 {
+	/* Initialize low-level platform */
+	hw_init();
+
 	/* Enable all the interrupts */
 	IRQ_ENABLE;
 
 	/* Initialize debugging module (allow kprintf(), etc.) */
 	kdbg_init();
+
 	/* Initialize system timer */
 	timer_init();
-	/* Initialize LED driver */
-	LED_INIT();
-	/* Enable the WAKE_UP button on the board */
-	kbd_init();
+
+	/* Kernel initialization */
+	proc_init();
+
 	/* Initialize the USB keyboard device */
 	usbkbd_init(0);
+
+	/* Initialize keymap */
+	keymap_init();
+
+	/* Initialize SIPO */
+//	sipo_init(&sipo, 0, SIPO_DATAORDER_LSB);
 }
 
-/* Simulate the pression and release of a key on the keyboard */
-static void usb_send_key(uint8_t mod, uint8_t c)
+/* Send scan code */
+static void usb_send_key(scancode_t code)
 {
-	usbkbd_sendEvent(mod, c);
-	usbkbd_sendEvent(0, 0);
+	usbkbd_sendEvent((code & 0xff00) >> 8, code & 0x00ff);
 }
 
-/* XXX: note that these scancodes are valid only with the US keyboard layout */
-static const uint16_t keys[] =
+static void NORETURN scan_proc(void)
 {
-	/* http:// */
-	0x000b, 0x0017, 0x0017, 0x0013, 0x2033, 0x0038, 0x0038,
-	/* www. */
-	0x001a, 0x001a, 0x001a, 0x0037,
-	/* bertos. */
-	0x0005, 0x0008, 0x0015, 0x0017, 0x0012, 0x0016, 0x0037,
-	/* org. */
-	0x0012, 0x0015, 0x000a,
-	/* \n */
-	0x0028,
-};
+	scancode_t * code;
+
+	/* Periodically scan the keyboard */
+	while (1)
+	{
+		keymap_scan();
+
+		while ((code = keymap_get_next_code()) != NULL) {
+			usb_send_key(*code);
+		}
+
+		timer_delay(1);
+	}
+}
 
 int main(void)
 {
 	/* Hardware initialization */
 	init();
 
-	kprintf("USB HID Keyboard configured\n");
-	kbd_setRepeatMask(K_WAKEUP);
-	while (1)
-	{
-		unsigned int i;
+	/* Sample process */
+	proc_new(scan_proc, NULL, KERN_MINSTACKSIZE, NULL);
 
-		/* Wait until the WAKE_UP button is pressed */
-		kbd_get();
-		/* Send the keyboard scancodes */
-		for (i = 0; i < countof(keys); i++)
-			usb_send_key((keys[i] & 0xff00) >> 8, keys[i] & 0xff);
+	//timer_setDelay(&timer, us_to_ticks(5));
+	//timer_setSoftint(&timer, timer_callback, NULL);
+	//timer_add(&timer);
+
+	while (1) {
+		cpu_relax();
 	}
 }
