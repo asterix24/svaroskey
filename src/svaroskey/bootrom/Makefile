@@ -37,7 +37,12 @@ TGT_BIN = $(IMG_DIR)/$(TARGET).bin
 
 # Source files
 ASM_SRC = startup/startup_cm3.S
-CXX_SRC = src/main.c
+CXX_SRC = \
+	src/main.c \
+	src/rcc.c \
+	src/gpio.c \
+	src/usart.c \
+	#
 
 # Object files
 CXX_OBJ = $(foreach file,$(CXX_SRC:%.c=%.o),$(OBJ_DIR)/$(TARGET)/$(file))
