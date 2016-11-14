@@ -67,6 +67,7 @@
 #include <drv/sipo.h>
 #include <drv/timer.h>
 #include <drv/usbkbd.h>
+#include <drv/eeprom.h>
 
 #include <kern/proc.h>
 
@@ -77,6 +78,9 @@
 
 static Timer timer;
 static Sipo sipo;
+
+static Eeprom eep;
+static I2c i2c;
 
 static uint8_t brightness[NUM_LEDS] = { [0] = 1 };
 
@@ -147,6 +151,10 @@ static void init(void)
 
 	/* Initialize SIPO */
 	sipo_init(&sipo, 0, SIPO_DATAORDER_LSB);
+
+	/* Initialize EEPROM */
+	i2c_init(&i2c, I2C_BITBANG0, CONFIG_I2C_FREQ);
+	eeprom_init(&eep, &i2c, EEPROM_24XX128, 0x00, false);
 }
 
 static void NORETURN scan_proc(void)

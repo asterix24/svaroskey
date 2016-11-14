@@ -49,8 +49,8 @@
 #include <drv/gpio_stm32.h>
 #include <drv/clock_stm32.h>
 
-#define SDA_PIN   BV(0)
-#define SCL_PIN   BV(1)
+#define SDA_PIN   BV(10)
+#define SCL_PIN   BV(11)
 
 #define SDA_HI \
 			stm32_gpioPinConfig((struct stm32_gpio *)GPIOB_BASE, SDA_PIN, GPIO_MODE_IN_FLOATING, GPIO_SPEED_50MHZ)
