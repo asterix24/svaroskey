@@ -41,6 +41,7 @@ CXX_SRC = \
 	src/main.c \
 	src/rcc.c \
 	src/gpio.c \
+	src/flash.c \
 	src/usart.c \
 	#
 
