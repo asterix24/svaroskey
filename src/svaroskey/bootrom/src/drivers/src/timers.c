@@ -12,6 +12,13 @@
 /* SYSTICK CVR register bits */
 #define SYSTICK_CVR_CURRENT	(0xFFFFFF << 0)
 
+static volatile uint32_t ticks;
+
+void SysTick_IRQHandler(void)
+{
+	ticks++;
+}
+
 void SysTick_Init(void)
 {
 	/* Clear current value */
@@ -26,3 +33,8 @@ void SysTick_Init(void)
 			SYSTICK_CSR_ENABLE;
 }
 
+void Delay(uint32_t ms)
+{
+	uint32_t start = ticks;
+	while (ticks < start + ms) ;
+}

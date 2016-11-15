@@ -16,5 +16,6 @@ struct SYSTICK_Periph {
 
 /* SYSTICK public methods */
 void SysTick_Init(void);
+void Delay(uint32_t ms);
 
 #endif
