@@ -11,6 +11,30 @@ Default_IRQHandler:
 	wfi
 	b Default_IRQHandler
 
+.weak NMI_IRQHandler
+.set NMI_IRQHandler, Default_IRQHandler
+
+.weak HardFault_IRQHandler
+.set HardFault_IRQHandler, Default_IRQHandler
+
+.weak MemMgmFault_IRQHandler
+.set MemMgmFault_IRQHandler, Default_IRQHandler
+
+.weak BusFault_IRQHandler
+.set BusFault_IRQHandler, Default_IRQHandler
+
+.weak UsageFault_IRQHandler
+.set UsageFault_IRQHandler, Default_IRQHandler
+
+.weak SVCall_IRQHandler
+.set SVCall_IRQHandler, Default_IRQHandler
+
+.weak PendSV_IRQHandler
+.set PendSV_IRQHandler, Default_IRQHandler
+
+.weak SysTick_IRQHandler
+.set SysTick_IRQHandler, Default_IRQHandler
+
 .weak WWDG_IRQHandler
 .set WWDG_IRQHandler, Default_IRQHandler
 
@@ -200,16 +224,16 @@ Default_IRQHandler:
 irq_vectors:
 	.word __stack_end		/* Initial stack pointer */
 	.word Reset_IRQHandler		/* Reset handler */
-	.word Default_IRQHandler	/* NMI handler */
-	.word Default_IRQHandler	/* Hard fault handler */
-	.word Default_IRQHandler	/* Memory management fault handler */
-	.word Default_IRQHandler	/* Bus fault handler */
-	.word Default_IRQHandler	/* Usage fault handler */
+	.word NMI_IRQHandler		/* NMI handler */
+	.word HardFault_IRQHandler	/* Hard fault handler */
+	.word MemMgmFault_IRQHandler	/* Memory management fault handler */
+	.word BusFault_IRQHandler	/* Bus fault handler */
+	.word UsageFault_IRQHandler	/* Usage fault handler */
 	.space 16			/* Reserved */
-	.word Default_IRQHandler	/* Supervisor call handler */
+	.word SVCall_IRQHandler		/* Supervisor call handler */
 	.space 8			/* Reserved */
-	.word Default_IRQHandler	/* PendSV handler */
-	.word Default_IRQHandler	/* Systick handler */
+	.word PendSV_IRQHandler		/* PendSV handler */
+	.word SysTick_IRQHandler	/* Systick handler */
 
 	.word WWDG_IRQHandler		/* Window Watchdog handler */
 	.word PVD_IRQHandler		/* PVD through EXTI Line detection handler */
