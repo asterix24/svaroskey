@@ -62,13 +62,16 @@ int FLASH_ErasePage(uint32_t addr)
 
 	while (FLASH_Busy()) ;
 
-	/* Disable erase */
-	FLASH->CR &= ~FLASH_CR_PER;
+	/* Unset erase bit */
+	FLASH->CR &= ~(FLASH_CR_STRT | FLASH_CR_PER);
+
+	if (!(FLASH->SR & FLASH_SR_EOP))
+		return -2;
 
 	/* Verify */
 	for (i = 0; i < 256; i++)
 		if (*(page_base + i) != 0xFFFFFFFF)
-			return -2;
+			return -3;
 
 	return 0;
 }
@@ -93,9 +96,16 @@ int FLASH_WriteHalf(uint16_t *addr, uint16_t data)
 	/* Unset programming bit */
 	FLASH->CR &= ~FLASH_CR_PG;
 
+	/* Check for errors */
+	if (FLASH->SR & FLASH_SR_PGERR)
+		return -2;
+
+	if (!(FLASH->SR & FLASH_SR_EOP))
+		return -3;
+
 	/* Verify */
 	if (*addr != data)
-		return -1;
+		return -4;
 
 	return 0;
 }

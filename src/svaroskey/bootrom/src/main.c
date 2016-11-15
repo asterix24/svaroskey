@@ -40,7 +40,7 @@ int main(void)
 	dat = *(uint16_t *)0x08001032;
 
 	USART_Send(USART1, ret + 'O');
-	USART_Send(USART1, dat + 'O');
+	USART_Send(USART1, dat & 0xFF);
 
 	ret = FLASH_ErasePage(0x08001032);
 	USART_Send(USART1, ret + 'K');
