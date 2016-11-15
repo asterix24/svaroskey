@@ -100,3 +100,16 @@ int FLASH_WriteHalf(uint16_t *addr, uint16_t data)
 	return 0;
 }
 
+void FLASH_EnablePrefetchBuffer(bool state)
+{
+	if (state)
+		FLASH->ACR |= (1 << 4);
+	else
+		FLASH->ACR &= ~(1 << 4);
+}
+
+void FLASH_SetAccessLatency(enum FLASH_AccessLatency lat)
+{
+	FLASH->ACR &= ~0x7;
+	FLASH->ACR |= lat & 0x7;
+}

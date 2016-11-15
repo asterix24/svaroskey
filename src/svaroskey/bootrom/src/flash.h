@@ -20,8 +20,17 @@ struct FLASH_Periph {
 /* FLASH instances */
 #define FLASH	((struct FLASH_Periph *)(0x40022000))
 
+/* FLASH access latency */
+enum FLASH_AccessLatency {
+	FLASH_ZeroWaitStates = 0,
+	FLASH_OneWaitState,
+	FLASH_TwoWaitStates
+};
+
 /* FLASH public methods */
 int FLASH_ErasePage(uint32_t addr);
 int FLASH_WriteHalf(uint16_t *addr, uint16_t data);
+void FLASH_EnablePrefetchBuffer(bool state);
+void FLASH_SetAccessLatency(enum FLASH_AccessLatency lat);
 
 #endif
