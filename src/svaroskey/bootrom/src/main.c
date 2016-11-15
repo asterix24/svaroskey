@@ -11,6 +11,12 @@ void SysTick_IRQHandler(void)
 	ticks++;
 }
 
+void HardFault_IRQHandler(void)
+{
+	USART_Send(USART1, 'x');
+	while (1) ;
+}
+
 void mdelay(uint32_t ms)
 {
 	uint32_t start = ticks;
@@ -32,10 +38,14 @@ int main(void)
 
 	ret = FLASH_WriteHalf((uint16_t *)0x08001032, 0x004F);
 	dat = *(uint16_t *)0x08001032;
-	USART_Send(USART1, dat & 0xFF);
+
+	USART_Send(USART1, ret + 'O');
+	USART_Send(USART1, dat + 'O');
 
 	ret = FLASH_ErasePage(0x08001032);
 	USART_Send(USART1, ret + 'K');
+
+	/* Should print OOK. */
 
 	while (1) {
 		USART_Send(USART1,'.');
