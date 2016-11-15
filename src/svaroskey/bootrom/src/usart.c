@@ -3,7 +3,7 @@
 void USART_Init(struct USART_Periph *USART)
 {
 	USART->CR1 |= (1 << 13) | (1 << 3);
-	USART->BRR = 8000000UL / 9600UL;
+	USART->BRR = 72000000L / 9600L;
 }
 
 void USART_Send(struct USART_Periph *USART, uint8_t ch)

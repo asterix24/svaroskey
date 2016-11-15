@@ -15,14 +15,13 @@ struct RCC_Periph {
 	volatile uint32_t APB1ENR;
 	volatile uint32_t BDCR;
 	volatile uint32_t CSR;
-	volatile uint32_t AHBSTR;
-	volatile uint32_t CFGR2;
 };
 
 /* RCC instances */
 #define RCC	((struct RCC_Periph *)(0x40021000))
 
 /* RCC public methods */
+void RCC_ClockInit(void);
 void RCC_APB2Periph_SetEnabled(uint32_t mask, uint8_t state);
 
 #endif

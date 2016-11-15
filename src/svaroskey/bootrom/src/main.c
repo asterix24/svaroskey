@@ -8,6 +8,8 @@ int main(void)
 	uint16_t dat;
 	int ret;
 
+	RCC_ClockInit();
+
 	RCC_APB2Periph_SetEnabled((1 << 14) | (1 << 2) | (1 << 0), 1);
 
 	GPIO_SetPinMode(GPIOA, (1 << 9) | (1 << 10), 0);
