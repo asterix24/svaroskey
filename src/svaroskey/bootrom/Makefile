@@ -1,6 +1,7 @@
 # To be modified according to the project's settings
 TARGET = bootrom
 PREFIX = arm-none-eabi-
+USER_CXX_SRC = src/main.c
 
 # Verbosity
 ifeq ($(V),1)
@@ -20,7 +21,7 @@ OBJDUMP = $(PREFIX)objdump
 OBJCOPY = $(PREFIX)objcopy
 
 # Toolchain flags
-CFLAGS = -std=gnu99 -mcpu=cortex-m3 -O2 -mthumb -mno-thumb-interwork
+CFLAGS = -std=gnu99 -mcpu=cortex-m3 -O2 -mthumb -mno-thumb-interwork -Isrc/drivers/include
 LDFLAGS = -mcpu=cortex-m3 -Wl,--gc-sections -mthumb -mno-thumb-interwork -nostartfiles -Wl,-dT scripts/stm32f103rb.ld -Wl,-Map=images/svaroskey.map,--cref
 
 # Miscellaneous tools
@@ -36,14 +37,13 @@ TGT_ELF = $(IMG_DIR)/$(TARGET).elf
 TGT_BIN = $(IMG_DIR)/$(TARGET).bin
 
 # Source files
-ASM_SRC = startup/startup_cm3.S
-CXX_SRC = \
-	src/main.c \
-	src/rcc.c \
-	src/gpio.c \
-	src/flash.c \
-	src/timers.c \
-	src/usart.c \
+ASM_SRC = src/startup/startup_cm3.S
+CXX_SRC = $(USER_CXX_SRC) \
+	src/drivers/src/rcc.c \
+	src/drivers/src/gpio.c \
+	src/drivers/src/flash.c \
+	src/drivers/src/timers.c \
+	src/drivers/src/usart.c \
 	#
 
 # Object files
