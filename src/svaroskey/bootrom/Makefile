@@ -42,6 +42,7 @@ CXX_SRC = \
 	src/rcc.c \
 	src/gpio.c \
 	src/flash.c \
+	src/timers.c \
 	src/usart.c \
 	#
 
