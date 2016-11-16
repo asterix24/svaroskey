@@ -47,12 +47,13 @@
 #include <drv/gpio_stm32.h>
 #include <drv/clock_stm32.h>
 
-#define SIPO_BASE ((struct stm32_gpio *)GPIOC_BASE)
+#define SIPO_BASE_SR	((struct stm32_gpio *)GPIOA_BASE)
+#define SIPO_BASE_EN	((struct stm32_gpio *)GPIOC_BASE)
 
-#define SI_PIN     BV(3)
-#define CLK_PIN    BV(0)
-#define LOAD_PIN   BV(1)
-#define EN_PIN     BV(2)
+#define SI_PIN     BV(13)
+#define CLK_PIN    BV(15)
+#define LOAD_PIN   BV(14)
+#define EN_PIN     (BV(14) | BV(15))
 
 /**
  * Map sipo connection on board.
@@ -85,12 +86,12 @@ typedef enum SipoMap
  */
 #define SIPO_SI_HIGH()                                \
 	do {                                              \
-		stm32_gpioPinWrite(SIPO_BASE, SI_PIN, true);  \
+		stm32_gpioPinWrite(SIPO_BASE_SR, SI_PIN, true);  \
 	} while (0)
 
 #define SIPO_SI_LOW()                                 \
 	do {                                              \
-		stm32_gpioPinWrite(SIPO_BASE, SI_PIN, false); \
+		stm32_gpioPinWrite(SIPO_BASE_SR, SI_PIN, false); \
 	} while (0)
 
 /**
@@ -99,9 +100,9 @@ typedef enum SipoMap
 #define SIPO_SI_CLOCK(clk_pol)                         \
 	do {                                               \
 		(void)clk_pol;                                 \
-		stm32_gpioPinWrite(SIPO_BASE, CLK_PIN, true);  \
+		stm32_gpioPinWrite(SIPO_BASE_SR, CLK_PIN, true);  \
 		NOP; NOP; NOP; NOP;                            \
-		stm32_gpioPinWrite(SIPO_BASE, CLK_PIN, false); \
+		stm32_gpioPinWrite(SIPO_BASE_SR, CLK_PIN, false); \
 	} while (0)
 
 /**
@@ -109,9 +110,9 @@ typedef enum SipoMap
  */
 #define SIPO_LOAD(device, load_pol)                     \
  	do {                                                \
-		stm32_gpioPinWrite(SIPO_BASE, LOAD_PIN, true);  \
+		stm32_gpioPinWrite(SIPO_BASE_SR, LOAD_PIN, true);  \
 		NOP; NOP; NOP; NOP;                             \
-		stm32_gpioPinWrite(SIPO_BASE, LOAD_PIN, false); \
+		stm32_gpioPinWrite(SIPO_BASE_SR, LOAD_PIN, false); \
 	} while (0)
 
 /**
@@ -119,7 +120,7 @@ typedef enum SipoMap
  */
 #define SIPO_ENABLE()                                  \
 	do {                                               \
-		stm32_gpioPinWrite(SIPO_BASE, EN_PIN, false);  \
+		stm32_gpioPinWrite(SIPO_BASE_EN, EN_PIN, false);  \
 	} while (0)
 
 /**
@@ -127,12 +128,12 @@ typedef enum SipoMap
  */
 #define SIPO_SET_LD_LEVEL(device, load_pol)              \
 	do {                                                 \
-		stm32_gpioPinWrite(SIPO_BASE, LOAD_PIN, false);  \
+		stm32_gpioPinWrite(SIPO_BASE_SR, LOAD_PIN, false);  \
 	} while (0)
 
 #define SIPO_SET_CLK_LEVEL(clock_pol)                    \
 	do {                                                 \
-		stm32_gpioPinWrite(SIPO_BASE, CLK_PIN, false);   \
+		stm32_gpioPinWrite(SIPO_BASE_SR, CLK_PIN, false);   \
 	} while (0)
 
 #define SIPO_SET_SI_LEVEL()  do {  SIPO_SI_LOW();  } while (0)
@@ -140,15 +141,15 @@ typedef enum SipoMap
 /**
  * Do anything that needed to init sipo pins.
  */
-#define SIPO_INIT_PIN()                                                        \
-	do {                                                                       \
-		/* Enable clocking on GPIOC */                                         \
-		RCC->APB2ENR |= RCC_APB2_GPIOC;                                        \
-		/* Configure pins as GPIO */                                           \
-		stm32_gpioPinConfig(SIPO_BASE, SI_PIN | CLK_PIN | LOAD_PIN | EN_PIN,   \
-			GPIO_MODE_OUT_PP, GPIO_SPEED_50MHZ);                               \
-		stm32_gpioPinWrite(SIPO_BASE, SI_PIN | CLK_PIN | LOAD_PIN | EN_PIN,    \
-			true);                                                             \
+#define SIPO_INIT_PIN() \
+	do { \
+		/* Enable clocking on GPIOC */ \
+		RCC->APB2ENR |= RCC_APB2_GPIOA | RCC_APB2_GPIOC; \
+		/* Configure pins as GPIO */ \
+		stm32_gpioPinConfig(SIPO_BASE_SR, SI_PIN | CLK_PIN | LOAD_PIN, GPIO_MODE_OUT_PP, GPIO_SPEED_50MHZ); \
+		stm32_gpioPinConfig(SIPO_BASE_EN, EN_PIN, GPIO_MODE_OUT_PP, GPIO_SPEED_50MHZ); \
+		stm32_gpioPinWrite(SIPO_BASE_SR, SI_PIN | CLK_PIN | LOAD_PIN, true); \
+		stm32_gpioPinWrite(SIPO_BASE_EN, EN_PIN, true); \
 	} while (0)
 
 #endif /* HW_SIPO_H */

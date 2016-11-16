@@ -146,7 +146,7 @@ static void init(void)
 	keymap_init();
 
 	/* Initialize SIPO */
-//	sipo_init(&sipo, 0, SIPO_DATAORDER_LSB);
+	sipo_init(&sipo, 0, SIPO_DATAORDER_LSB);
 }
 
 static void NORETURN scan_proc(void)
