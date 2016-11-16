@@ -38,3 +38,8 @@ void Delay(uint32_t ms)
 	uint32_t start = ticks;
 	while (ticks < start + ms) ;
 }
+
+uint32_t GetTicks(void)
+{
+	return ticks;
+}
