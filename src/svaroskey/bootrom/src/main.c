@@ -9,7 +9,7 @@ static uint32_t test[] = { 0, 1, 2, 3, 4, 256, 65536, 0x12345678 };
 
 void HardFault_IRQHandler(void)
 {
-	USART_Send(USART1, 'x');
+	USART_Send(USART1, 'x', 0);
 	while (1) ;
 }
 
@@ -37,19 +37,19 @@ int main(void)
 	dat = *(uint16_t *)0x08001032;
 
 	if (ret || dat != 0x004F) {
-		USART_Send(USART1, 'X');
+		USART_Send(USART1, 'X', 0);
 	}
 
 	ret = FLASH_ErasePage(0x08001032);
 
 	if (ret) {
-		USART_Send(USART1, 'Y');
+		USART_Send(USART1, 'Y', 0);
 	}
 
 	FLASH_WriteBlock(0x08002014, test, sizeof(test));
 
 	while (1) {
-		byte = USART_Recv(USART1);
-		USART_Send(USART1, byte);
+		byte = USART_Recv(USART1, 1000);
+		USART_Send(USART1, byte, 0);
 	}
 }

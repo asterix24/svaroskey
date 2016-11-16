@@ -1,4 +1,5 @@
 #include "usart.h"
+#include "timers.h"
 
 /* USART SR register bits */
 #define USART_SR_PE		(0x1 << 0)
@@ -34,15 +35,34 @@ void USART_Init(struct USART_Periph *USART, uint32_t baud)
 	USART->BRR = 72000000L / baud;
 }
 
-void USART_Send(struct USART_Periph *USART, uint8_t ch)
+void USART_Send(struct USART_Periph *USART, uint8_t ch, uint32_t timeout)
 {
-	while (!(USART->SR & USART_SR_TXE)) ;
+	uint32_t until = GetTicks() + timeout;
+
+	while (!USART_TxReady(USART))
+		if (timeout && GetTicks() > until)
+			break;
+
 	USART->DR = ch & 0xFF;
 }
 
-uint8_t USART_Recv(struct USART_Periph *USART)
+uint8_t USART_Recv(struct USART_Periph *USART, uint32_t timeout)
 {
-	while (!(USART->SR & USART_SR_RXNE)) ;
+	uint32_t until = GetTicks() + timeout;
+
+	while (!USART_RxReady(USART))
+		if (timeout && GetTicks() > until)
+			break;
+
 	return USART->DR;
 }
 
+bool USART_TxReady(struct USART_Periph *USART)
+{
+	return USART->SR & USART_SR_TXE;
+}
+
+bool USART_RxReady(struct USART_Periph *USART)
+{
+	return USART->SR & USART_SR_RXNE;
+}

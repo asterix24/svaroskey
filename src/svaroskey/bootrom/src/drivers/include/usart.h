@@ -2,6 +2,7 @@
 #define USART_H
 
 #include <stdint.h>
+#include <stdbool.h>
 
 /* USART peripheral definition */
 struct USART_Periph {
@@ -19,7 +20,9 @@ struct USART_Periph {
 
 /* USART public methods */
 void USART_Init(struct USART_Periph *USART, uint32_t baud);
-void USART_Send(struct USART_Periph *USART, uint8_t ch);
-uint8_t USART_Recv(struct USART_Periph *USART);
+bool USART_TxReady(struct USART_Periph *USART);
+bool USART_RxReady(struct USART_Periph *USART);
+void USART_Send(struct USART_Periph *USART, uint8_t ch, uint32_t timeout);
+uint8_t USART_Recv(struct USART_Periph *USART, uint32_t timeout);
 
 #endif
