@@ -29,7 +29,7 @@ int main(void)
 
 	hw_init();
 
-	ret = FLASH_WriteHalf((uint16_t *)0x08001032, 0x004F);
+	ret = FLASH_WriteHalf(0x08001032, 0x004F);
 	dat = *(uint16_t *)0x08001032;
 
 	USART_Send(USART1, ret + 'O');

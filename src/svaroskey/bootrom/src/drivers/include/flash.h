@@ -27,9 +27,11 @@ enum FLASH_AccessLatency {
 	FLASH_TwoWaitStates
 };
 
+#define FLASH_PAGE_SIZE	1024
+
 /* FLASH public methods */
 int FLASH_ErasePage(uint32_t addr);
-int FLASH_WriteHalf(uint16_t *addr, uint16_t data);
+int FLASH_WriteHalf(uint32_t addr, uint16_t data);
 void FLASH_EnablePrefetchBuffer(bool state);
 void FLASH_SetAccessLatency(enum FLASH_AccessLatency lat);
 

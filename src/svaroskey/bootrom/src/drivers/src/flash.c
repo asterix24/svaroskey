@@ -76,7 +76,7 @@ int FLASH_ErasePage(uint32_t addr)
 	return 0;
 }
 
-int FLASH_WriteHalf(uint16_t *addr, uint16_t data)
+int FLASH_WriteHalf(uint32_t addr, uint16_t data)
 {
 	while (FLASH_Busy()) ;
 
@@ -88,7 +88,7 @@ int FLASH_WriteHalf(uint16_t *addr, uint16_t data)
 	
 	/* Set programming bit and write data */
 	FLASH->CR |= FLASH_CR_PG;
-	*addr = data;
+	*(uint16_t *)addr = data;
 
 	/* Wait for transfer to finish */
 	while (FLASH_Busy()) ;
@@ -104,7 +104,7 @@ int FLASH_WriteHalf(uint16_t *addr, uint16_t data)
 		return -3;
 
 	/* Verify */
-	if (*addr != data)
+	if (*(uint16_t *)addr != data)
 		return -4;
 
 	return 0;
