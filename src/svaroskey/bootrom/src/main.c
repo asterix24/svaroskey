@@ -22,12 +22,13 @@ void hw_init(void)
 	/* Setup peripherals */
 	RCC_APB2Periph_SetEnabled((1 << 14) | (1 << 2) | (1 << 0), 1);
 	GPIO_SetPinMode(GPIOA, (1 << 9) | (1 << 10), 0);
-	USART_Init(USART1);
+	USART_Init(USART1, 115200);
 }
 
 int main(void)
 {
 	uint16_t dat;
+	uint8_t byte;
 	int ret;
 
 	hw_init();
@@ -35,18 +36,20 @@ int main(void)
 	ret = FLASH_WriteHalf(0x08001032, 0x004F);
 	dat = *(uint16_t *)0x08001032;
 
-	USART_Send(USART1, ret + 'O');
-	USART_Send(USART1, dat & 0xFF);
+	if (ret || dat != 0x004F) {
+		USART_Send(USART1, 'X');
+	}
 
 	ret = FLASH_ErasePage(0x08001032);
-	USART_Send(USART1, ret + 'K');
 
-	/* Should print OOK. */
+	if (ret) {
+		USART_Send(USART1, 'Y');
+	}
 
 	FLASH_WriteBlock(0x08002014, test, sizeof(test));
 
 	while (1) {
-		USART_Send(USART1,'.');
-		Delay(1000);
+		byte = USART_Recv(USART1);
+		USART_Send(USART1, byte);
 	}
 }
