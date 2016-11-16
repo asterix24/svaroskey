@@ -3,6 +3,9 @@
 #include "flash.h"
 #include "timers.h"
 #include "usart.h"
+#include "io.h"
+
+static uint32_t test[] = { 0, 1, 2, 3, 4, 256, 65536, 0x12345678 };
 
 void HardFault_IRQHandler(void)
 {
@@ -39,6 +42,8 @@ int main(void)
 	USART_Send(USART1, ret + 'K');
 
 	/* Should print OOK. */
+
+	FLASH_WriteBlock(0x08002014, test, sizeof(test));
 
 	while (1) {
 		USART_Send(USART1,'.');

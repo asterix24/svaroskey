@@ -1,7 +1,10 @@
 # To be modified according to the project's settings
 TARGET = bootrom
 PREFIX = arm-none-eabi-
-USER_CXX_SRC = src/main.c
+USER_CXX_SRC = \
+	src/main.c \
+	src/io.c \
+	#
 
 # Verbosity
 ifeq ($(V),1)
