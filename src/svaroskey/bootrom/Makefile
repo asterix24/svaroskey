@@ -24,7 +24,7 @@ OBJDUMP = $(PREFIX)objdump
 OBJCOPY = $(PREFIX)objcopy
 
 # Toolchain flags
-CFLAGS = -std=gnu99 -mcpu=cortex-m3 -O2 -mthumb -mno-thumb-interwork -Isrc/drivers/include
+CFLAGS = -Wall -Wextra -std=gnu99 -mcpu=cortex-m3 -O2 -mthumb -mno-thumb-interwork -Isrc/drivers/include
 LDFLAGS = -mcpu=cortex-m3 -Wl,--gc-sections -mthumb -mno-thumb-interwork -nostartfiles -Wl,-dT scripts/stm32f103rb.ld -Wl,-Map=images/svaroskey.map,--cref
 
 # Miscellaneous tools
