@@ -5,12 +5,33 @@
 #include "usart.h"
 #include "io.h"
 
-static uint32_t test[] = { 0, 1, 2, 3, 4, 256, 65536, 0x12345678 };
+#define SYN	0xA0
+#define ACK	0x0A
 
 void HardFault_IRQHandler(void)
 {
 	USART_Send(USART1, 'x', 0);
 	while (1) ;
+}
+
+bool fw_wait_for_flashprog(void)
+{
+	uint8_t byte;
+
+	/* Listen on USART1 for SYN for 1s */
+	byte = USART_Recv(USART1, 1000);
+
+	if (byte != SYN)
+		return false;
+
+	/* Reply with ACK */
+	USART_Send(USART1, ACK, 1000);
+
+	/* Wait another 1s for SYN+ACK */
+	if (USART_Recv(USART1, 1000) != (SYN | ACK))
+		return false;
+
+	return true;
 }
 
 void hw_init(void)
@@ -27,26 +48,14 @@ void hw_init(void)
 
 int main(void)
 {
-	uint16_t dat;
 	uint8_t byte;
-	int ret;
 
 	hw_init();
 
-	ret = FLASH_WriteHalf(0x08001032, 0x004F);
-	dat = *(uint16_t *)0x08001032;
-
-	if (ret || dat != 0x004F) {
-		USART_Send(USART1, 'X', 0);
-	}
-
-	ret = FLASH_ErasePage(0x08001032);
-
-	if (ret) {
-		USART_Send(USART1, 'Y', 0);
-	}
-
-	FLASH_WriteBlock(0x08002014, test, sizeof(test));
+	if (fw_wait_for_flashprog())
+		USART_Send(USART1, '!', 0);
+	else
+		USART_Send(USART1, '?', 0);
 
 	while (1) {
 		byte = USART_Recv(USART1, 1000);
