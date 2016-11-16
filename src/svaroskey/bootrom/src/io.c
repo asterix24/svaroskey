@@ -7,7 +7,6 @@ int FLASH_WriteBlock(uint32_t dst, const void *src, int count)
 {
 	uint16_t *data;
 	uint32_t addr, end;
-	int num_pages;
 
 	if (count <= 0)
 		return 0;
