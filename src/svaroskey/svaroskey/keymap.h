@@ -2,6 +2,7 @@
 #define SVAROSKEY_KEYMAP_H
 
 #include <cpu/types.h>
+#include <drv/usbkbd.h>
 
 typedef uint16_t scancode_t;
 
@@ -19,7 +20,7 @@ typedef struct
 	uint8_t col_pin;
 } KeyMapping;
 
-scancode_t * keymap_get_next_code(void);
+UsbKbdEvent * keymap_get_next_code();
 void keymap_scan(void);
 void keymap_init(void);
 
