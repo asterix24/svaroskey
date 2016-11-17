@@ -20,7 +20,7 @@ typedef struct
 	uint8_t col_pin;
 } KeyMapping;
 
-UsbKbdEvent * keymap_get_next_code();
+UsbKbdEvent * keymap_get_next_code(void);
 void keymap_scan(void);
 void keymap_init(void);
 
