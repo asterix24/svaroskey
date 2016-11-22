@@ -74,7 +74,7 @@ KeyBinding keymap_layout[LAYOUT_SIZE] = {
 	{ 50,   KEY_COMMA          },
 	{ 51,   KEY_PERIOD         },
 	{ 52,   KEY_SLASH          },
-	{ 53,   KEY_UP             },
+	{ 53,   KEY_LEFTSHIFT      },
 
 	/* Row 5 */
 	{ 54,   KEY_LEFTCONTROL    },
@@ -85,9 +85,9 @@ KeyBinding keymap_layout[LAYOUT_SIZE] = {
 	{ 59,   KEY_SPACE          },
 	{ 60,   KEY_RIGHTALT       },
 	{ 61,   KEY_RIGHTCONTROL   },
-	{ 62,   KEY_LEFT           },
-	{ 63,   KEY_DOWN           },
-	{ 64,   KEY_RIGHT          },
+	{ 62,   KEY_END            },
+	{ 63,   KEY_PAGEDOWN       },
+	{ 64,   KEY_PAGEUP         },
 #elif (CONFIG_LAYOUT_REVISION == 1)
 	/* Row 1 */
 	{ 0,    KEY_ESCAPE        },
@@ -219,4 +219,81 @@ KeyBinding keymap_layout[LAYOUT_SIZE] = {
 	{ 104,  KP_POINT          },
 	{ 105,  KP_ENTER          },
 #endif
+};
+
+KeyBinding keymap_alternate_layout[LAYOUT_SIZE] = {
+	/* Row 1 */
+	{ 0,    KEY_ESCAPE         },
+	{ 1,    KEY_1              },
+	{ 2,    KEY_2              },
+	{ 3,    KEY_3              },
+	{ 4,    KEY_4              },
+	{ 5,    KEY_5              },
+	{ 6,    KEY_6              },
+	{ 7,    KEY_7              },
+	{ 8,    KEY_8              },
+	{ 9,    KEY_9              },
+	{ 10,   KEY_0              },
+	{ 11,   KEY_MINUS          },
+	{ 12,   KEY_EQUALS         },
+	{ 13,   KEY_DELETE         },
+
+	/* Row 2 */
+	{ 14,   KEY_TAB            },
+	{ 15,   KEY_Q              },
+	{ 16,   KEY_W              },
+	{ 17,   KEY_E              },
+	{ 18,   KEY_R              },
+	{ 19,   KEY_T              },
+	{ 20,   KEY_Y              },
+	{ 21,   KEY_U              },
+	{ 22,   KEY_I              },
+	{ 23,   KEY_O              },
+	{ 24,   KEY_P              },
+	{ 25,   KEY_LEFTBRACKET    },
+	{ 26,   KEY_RIGHTBRACKET   },
+	{ 27,   KEY_ENTER          },
+
+	/* Row 3 */
+	{ 28,   KEY_RIGHTCONTROL   },
+	{ 29,   KEY_A              },
+	{ 30,   KEY_S              },
+	{ 31,   KEY_D              },
+	{ 32,   KEY_F              },
+	{ 33,   KEY_G              },
+	{ 34,   KEY_LEFT           },
+	{ 35,   KEY_DOWN           },
+	{ 36,   KEY_UP             },
+	{ 37,   KEY_RIGHT          },
+	{ 38,   KEY_SEMICOLON      },
+	{ 39,   KEY_QUOTE          },
+	{ 40,   KEY_BACKSLASH      },
+
+	/* Row 4 */
+	{ 41,   KEY_LEFTSHIFT      },
+	{ 42,   KEY_GRAVE          },
+	{ 43,   KEY_Z              },
+	{ 44,   KEY_X              },
+	{ 45,   KEY_C              },
+	{ 46,   KEY_V              },
+	{ 47,   KEY_B              },
+	{ 48,   KEY_N              },
+	{ 49,   KEY_M              },
+	{ 50,   KEY_COMMA          },
+	{ 51,   KEY_PERIOD         },
+	{ 52,   KEY_SLASH          },
+	{ 53,   KEY_UP             },
+
+	/* Row 5 */
+	{ 54,   KEY_LEFTCONTROL    },
+	{ 55,   KEY_LEFTGUI        },
+	{ 56,   KEY_LEFTALT        },
+	{ 57,   KEY_SPACE          },
+	{ 58,   KEY_DELETEFORWARD  },
+	{ 59,   KEY_SPACE          },
+	{ 60,   KEY_RIGHTALT       },
+	{ 61,   KEY_RIGHTCONTROL   },
+	{ 62,   KEY_LEFT            },
+	{ 63,   KEY_DOWN       },
+	{ 64,   KEY_RIGHT         },
 };

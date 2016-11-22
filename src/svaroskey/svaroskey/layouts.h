@@ -10,6 +10,7 @@
 #endif
 
 extern KeyBinding keymap_layout[LAYOUT_SIZE];
+extern KeyBinding keymap_alternate_layout[LAYOUT_SIZE];
 
 KeyBinding * layout_get_key(int id);
 
