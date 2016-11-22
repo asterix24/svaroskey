@@ -15,7 +15,7 @@
 KeyBinding keymap_layout[LAYOUT_SIZE] = {
 #if (CONFIG_LAYOUT_REVISION == 0)
 	/* Row 1 */
-	{ 0,    KEY_NONUSBACKSLASH },
+	{ 0,    KEY_ESCAPE         },
 	{ 1,    KEY_1              },
 	{ 2,    KEY_2              },
 	{ 3,    KEY_3              },
@@ -47,7 +47,7 @@ KeyBinding keymap_layout[LAYOUT_SIZE] = {
 	{ 27,   KEY_ENTER          },
 
 	/* Row 3 */
-	{ 28,   KEY_CAPSLOCK       },
+	{ 28,   KEY_RIGHTCONTROL   },
 	{ 29,   KEY_A              },
 	{ 30,   KEY_S              },
 	{ 31,   KEY_D              },
@@ -81,7 +81,7 @@ KeyBinding keymap_layout[LAYOUT_SIZE] = {
 	{ 55,   KEY_LEFTGUI        },
 	{ 56,   KEY_LEFTALT        },
 	{ 57,   KEY_SPACE          },
-	{ 58,   KEY_ESCAPE         },
+	{ 58,   KEY_DELETEFORWARD  },
 	{ 59,   KEY_SPACE          },
 	{ 60,   KEY_RIGHTALT       },
 	{ 61,   KEY_RIGHTCONTROL   },
