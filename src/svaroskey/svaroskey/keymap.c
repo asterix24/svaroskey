@@ -11,7 +11,7 @@ static uint8_t previous_mods = 0;
 
 static int previous_codes_num = 0;
 static int codes_num = 0;
-static bool alternate_layout = 0;
+static bool alternate_layout = false;
 
 static UsbKbdEvent event = { 0, { 0 } };
 
@@ -45,21 +45,19 @@ static void keymap_update_key(int i)
 	if (!(KEYMAP_READ(kmap)))
 		return;
 
+	alternate_layout = false;
+	if (i == 55)
+		alternate_layout = true;
+
 	// Check if the key is a modifier key
 	if (key->code > 0xff)
 	{
-		if (i == 55)
-			alternate_layout = 1;
-		else
-		{
-			alternate_layout = 0;
+		if (i != 55)
 			event.mods |= (key->code >> 8);
-		}
-
-	// Otherwise see if it is different from before
 	}
-	else if (event.codes[codes_num++] != key->code) {
-		alternate_layout = 0;
+	// Otherwise see if it is different from before
+	else if (event.codes[codes_num++] != key->code)
+	{
 		valid = true;
 		event.codes[codes_num - 1] = (0xff & key->code);
 	}
