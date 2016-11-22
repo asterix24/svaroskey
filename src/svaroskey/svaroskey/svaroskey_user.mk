@@ -4,8 +4,8 @@
 #
 
 # Programmer interface configuration, see http://dev.bertos.org/wiki/ProgrammerInterface for help
-svaroskey_PROGRAMMER_TYPE = none
-svaroskey_PROGRAMMER_PORT = none
+svaroskey_PROGRAMMER_TYPE = st-link
+svaroskey_PROGRAMMER_PORT = /dev/tty.usbserial-AI04D7T3
 
 # Files included by the user.
 svaroskey_USER_CSRC = \
