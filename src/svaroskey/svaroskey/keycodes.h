@@ -1,6 +1,10 @@
 #ifndef SVAROSKEY_KEYCODES_H
 #define SVAROSKEY_KEYCODES_H
 
+#include <stdint.h>
+
+typedef uint16_t scancode_t;
+
 #define   KEY_NONE              0
 #define   KEY_A                 4
 #define   KEY_B                 5

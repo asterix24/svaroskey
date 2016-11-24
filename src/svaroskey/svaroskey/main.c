@@ -55,9 +55,7 @@
  *
  */
 
-#include "keymap.h"
-
-#include "hw/hw_keymap.h"
+#include "keyboard.h"
 
 #include <cfg/debug.h>
 
@@ -75,6 +73,8 @@
 #define NUM_LED_ROWS   8
 #define NUM_LED_COLS   8
 #define NUM_LEDS       (NUM_LED_COLS * NUM_LED_ROWS)
+
+struct Keyboard kb;
 
 static Timer timer;
 static Sipo sipo;
@@ -146,8 +146,8 @@ static void init(void)
 	/* Initialize the USB keyboard device */
 	usbkbd_init(0);
 
-	/* Initialize keymap */
-	keymap_init();
+	/* Initialize keyboard */
+	keyboard_init(&kb);
 
 	/* Initialize SIPO */
 	sipo_init(&sipo, 0, SIPO_DATAORDER_LSB);
@@ -164,10 +164,10 @@ static void NORETURN scan_proc(void)
 	/* Periodically scan the keyboard */
 	while (1)
 	{
-		keymap_scan();
+		keyboard_scan(&kb);
 
-		if ((event = keymap_get_next_code()) != NULL)
-			usbkbd_sendEvent(event);
+//		if ((event = keymap_get_next_code()) != NULL)
+//			usbkbd_sendEvent(event);
 
 		timer_delay(1);
 	}

@@ -1,5 +1,5 @@
-#ifndef CFG_KEYMAP_H
-#define CFG_KEYMAP_H
+#ifndef CFG_KEYBOARD_H
+#define CFG_KEYBOARD_H
 
 #ifdef SVAROSKEY
 	#define CONFIG_LAYOUT_REVISION   1
@@ -10,5 +10,7 @@
 	#define CONFIG_MAPPING_REVISION  0
 #endif
 
+#define CONFIG_GRID_SIZE	65
+#define CONFIG_LAYOUT_SIZE	65
 
-#endif /* CFG_KEYMAP_H */
+#endif /* CFG_KEYBOARD_H */
