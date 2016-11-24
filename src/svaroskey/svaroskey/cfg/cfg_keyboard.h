@@ -2,15 +2,9 @@
 #define CFG_KEYBOARD_H
 
 #ifdef SVAROSKEY
-	#define CONFIG_LAYOUT_REVISION   1
-	#define CONFIG_MAPPING_REVISION  1
-	#define CONFIG_INVERT_LAYOUT
+#include "cfg/cfg_keyboard_svaroskey.h"
 #else
-	#define CONFIG_LAYOUT_REVISION   0
-	#define CONFIG_MAPPING_REVISION  0
+#include "cfg/cfg_keyboard_petroskey.h"
 #endif
-
-#define CONFIG_GRID_SIZE	65
-#define CONFIG_LAYOUT_SIZE	65
 
 #endif /* CFG_KEYBOARD_H */
