@@ -1,8 +1,11 @@
 #ifndef CFG_KEYBOARD_PETROSKEY_H
 #define CFG_KEYBOARD_PETROSKEY_H
 
-#define CONFIG_GRID_SIZE	65
-#define CONFIG_LAYOUT_SIZE	65
-#define CONFIG_HW_FUNCTION_NUM	1
+#include "cfg/cfg_keyboard.h"
+
+#define CONFIG_HW_FUNCTION_NUM	0
+
+EXPORT_LAYOUT(default)
+EXPORT_GRID(default)
 
 #endif /* CFG_KEYBOARD_PETROSKEY_H */

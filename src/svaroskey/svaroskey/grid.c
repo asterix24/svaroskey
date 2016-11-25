@@ -7,7 +7,7 @@ bool grid_scan_all(struct Grid *grid)
 	bool any_active = false;
 	int i;
 
-	for (i = 0; i < CONFIG_GRID_SIZE; i++)
+	for (i = 0; i < grid->num_cells; i++)
 		any_active = any_active || cell_read_state(&grid->cells[i]);
 
 	return any_active;

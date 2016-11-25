@@ -20,7 +20,8 @@ struct Cell {
 };
 
 struct Grid {
-	struct Cell	cells[CONFIG_GRID_SIZE];
+	struct Cell	*cells;
+	int		num_cells;
 };
 
 bool grid_scan_all(struct Grid *grid);

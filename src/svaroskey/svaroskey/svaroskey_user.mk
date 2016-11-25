@@ -14,6 +14,7 @@ svaroskey_USER_CSRC = \
 	$(svaroskey_SRC_PATH)/layout.c \
 	$(svaroskey_SRC_PATH)/grid.c \
 	$(svaroskey_SRC_PATH)/hw/hw_keyboard.c \
+	$(svaroskey_SRC_PATH)/cfg/cfg_keyboard_petroskey.c \
 	#
 
 # Files included by the user.
