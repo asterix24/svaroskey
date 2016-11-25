@@ -11,6 +11,7 @@ typedef void (*key_callback_t)(void);
 struct Cell;
 
 struct Key {
+	int		id;
 	struct Cell	*cell;
 	scancode_t	scancodes[CONFIG_HW_FUNCTION_NUM + 1];
 	key_callback_t	funcs[CONFIG_HW_FUNCTION_NUM + 1];
