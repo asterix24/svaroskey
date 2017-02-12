@@ -202,11 +202,10 @@ static const UsbStringDesc *usb_hid_strings[] =
 };
 
 static uint8_t report[8];
-static uint8_t buf[64];
+static uint8_t tmp_buf[128];
 
 #define MAX_HID_CALL     4
 #define GEN_CLASS_ID     0x01 //Generic Desktop Controls
-#define CALL_IDLE        0
 
 static bool hid_keyboard_configured;
 
@@ -221,6 +220,7 @@ static CallbackTable hid_call_table[MAX_HID_CALL];
 
 static FeatureReport_t usbkdb_searchCallback(uint8_t id, void *data)
 {
+	(void)data;
 	data = NULL;
 	for (int i = 0; i < MAX_HID_CALL; i++)
 	{
@@ -294,41 +294,31 @@ static void usb_hid_event_cb(UsbCtrlRequest *ctrl)
 
 			if (send_reply_id)
 			{
-				kprintf("Reply...\n");
 				CustomData *data = NULL;
-				uint8_t _buf[62];
 				FeatureReport_t call = usbkdb_searchCallback(send_reply_id, data);
+				LOG_INFO("Call Reply report callback[%x]\n", send_reply_id);
 				if (call)
 				{
-					len = call((uint8_t *)_buf, sizeof(_buf), data);
-					usb_endpointWrite(USB_DIR_IN | 0, _buf, len);
-					kprintf("Sent get[%d]\n",len);
+					len = call((uint8_t *)tmp_buf, sizeof(tmp_buf), data);
+					usb_endpointWrite(USB_DIR_IN | 0, tmp_buf, len);
+					LOG_INFO("Sent[%d]\n", len);
 				}
 				send_reply_id = 0;
 			}
 			break;
 		case HID_REQ_SET_REPORT:
 			LOG_INFO("%s: HID_REQ_SET_REPORT\n", __func__);
-			len = usb_endpointRead(USB_DIR_OUT | 0, (uint8_t *)buf, length);
+			len = usb_endpointRead(USB_DIR_OUT | 0, (uint8_t *)tmp_buf, length);
 			usb_endpointWrite(USB_DIR_IN | 0, NULL, 0);
-
-			kprintf("[%d]set: ", len);
-			for (int i = 0; i<len; i++)
-				kprintf("%x ", buf[i]);
-			kprintf("\n");
-
 			if (len > 2)
 			{
-				if (buf[0] == GEN_CLASS_ID)
+				if (tmp_buf[0] == GEN_CLASS_ID)
 				{
 					CustomData *data = NULL;
-					uint8_t _buf[62];
-					FeatureReport_t call = usbkdb_searchCallback(buf[1], data);
+					FeatureReport_t call = usbkdb_searchCallback(tmp_buf[1], data);
+					LOG_INFO("Call report callback[%x]\n", tmp_buf[1]);
 					if (call)
-					{
-						memcpy((uint8_t *)_buf, (uint8_t *)&buf[2], sizeof(_buf));
-						call((uint8_t *)_buf, sizeof(_buf), data);
-					}
+						call((uint8_t *)tmp_buf, len, data);
 				}
 			}
 			break;
