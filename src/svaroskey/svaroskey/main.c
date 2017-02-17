@@ -67,7 +67,11 @@
 #include <drv/sipo.h>
 #include <drv/timer.h>
 #include <drv/usbkbd.h>
+#include <drv/usbser.h>
 #include <drv/eeprom.h>
+#include <drv/flash.h>
+
+#include <io/kfile_block.h>
 
 #include <kern/proc.h>
 
@@ -126,6 +130,38 @@ static void hw_init(void)
 	*AFIO |=  (0x04000000);
 }
 
+static uint8_t leds_off[3]  = {0x00, 0x00, 0x00};
+static uint8_t leds_on[3] = {0xff, 0x00, 0x00};
+
+static Flash internal_flash;
+static KFileBlock flash;
+
+#define TRIM_START 45
+
+static int boot_callback(void *buff, size_t len, void *data)
+{
+	Flash *_data =(Flash *)data;
+	uint8_t *_buf = (uint8_t *)buff;
+	kprintf("Write blk[");
+	size_t ret = kblock_write(&(_data->blk), 0, _buf, 0, len);
+	//size_t ret = kblock_write(flash.blk, 0, _buf, 0, len);
+	kprintf("%d]\n", ret);
+	usbkbd_registerCallbackReply(0x17);
+	return 0;
+}
+
+static int boot1_callback(void *buff, size_t len, void *data)
+{
+	uint8_t *_buf = (uint8_t *)buff;
+	Flash *_data =(Flash *)data;
+	kblock_read(&(_data->blk), 0, _buf, 0, len);
+	//kblock_read(flash.blk, 0, _buf, 0, 64);
+	_buf[0] = 0x01;
+	_buf[1] = 0x17;
+	kprintf("Call Get: \n");
+	return len;
+}
+
 static void init(void)
 {
 	/* Initialize low-level platform */
@@ -143,18 +179,28 @@ static void init(void)
 	/* Kernel initialization */
 	proc_init();
 
+	/* Initialize SIPO */
+	sipo_init(&sipo, 0, SIPO_DATAORDER_LSB);
+	kfile_write(&sipo.fd, leds_on, sizeof(leds_on));
+
+	flash_init(&internal_flash, FLASH_WRITE_ONCE);
+	// trim flash to avoid problems with kfile_block
+	kprintf("Trim start: %d, blocks: %ld\n", TRIM_START, internal_flash.blk.blk_cnt - TRIM_START);
+	kblock_trim(&internal_flash.blk, TRIM_START, internal_flash.blk.blk_cnt - TRIM_START);
+	kfileblock_init(&flash, &internal_flash.blk);
+
 	/* Initialize the USB keyboard device */
+	usbkbd_registerCallback(boot_callback, 0x13, (Flash *)&flash);
+	usbkbd_registerCallback(boot1_callback, 0x17, (Flash *)&flash);
 	usbkbd_init(0);
 
 	/* Initialize keymap */
-	keymap_init();
-
-	/* Initialize SIPO */
-	sipo_init(&sipo, 0, SIPO_DATAORDER_LSB);
+	keymap_init(&sipo.fd);
 
 	/* Initialize EEPROM */
 	i2c_init(&i2c, I2C_BITBANG0, CONFIG_I2C_FREQ);
 	eeprom_init(&eep, &i2c, EEPROM_24XX128, 0x00, false);
+
 }
 
 static void NORETURN scan_proc(void)
@@ -173,6 +219,8 @@ static void NORETURN scan_proc(void)
 	}
 }
 
+static uint8_t buf[128];
+
 int main(void)
 {
 	/* Hardware initialization */
@@ -186,6 +234,12 @@ int main(void)
 	//timer_add(&timer);
 
 	while (1) {
-		cpu_relax();
+		kblock_read(flash.blk, 0, buf, 0, 64);
+		kprintf("data[%d]:", 0);
+		for (int i=0; i<64; i++)
+			kprintf("%x ", buf[i]);
+		kprintf("\n");
+
+		timer_delay(1000);
 	}
 }
