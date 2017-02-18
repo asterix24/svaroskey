@@ -209,32 +209,29 @@ static uint8_t tmp_buf[128];
 
 static bool hid_keyboard_configured;
 
-typedef struct CallbackTable {
+typedef struct USBKbdCtx {
 	uint16_t id;
-	CustomData *data;
+	struct CustomData *data;
 	FeatureReport_t call;
-} CallbackTable;
+} USBKbdCtx;
 
 static int hid_call_registered;
-static CallbackTable hid_call_table[MAX_HID_CALL];
+static USBKbdCtx hid_call_table[MAX_HID_CALL];
 
-static FeatureReport_t usbkdb_searchCallback(uint8_t id, void *data)
+static USBKbdCtx *usbkdb_searchCallback(uint8_t id)
 {
-	(void)data;
-	data = NULL;
 	for (int i = 0; i < MAX_HID_CALL; i++)
 	{
 		if (id == hid_call_table[i].id)
 		{
-			data = hid_call_table[i].data;
-			kprintf("Found cmd[%x]\n", id);
-			return hid_call_table[i].call;
+			LOG_INFO("Found cmd[%x]\n", id);
+			return &hid_call_table[i];
 		}
 	}
 	return NULL;
 }
 
-void usbkbd_registerCallback(FeatureReport_t call, uint8_t id, void *data)
+void usbkbd_registerCallback(FeatureReport_t call, uint8_t id, struct CustomData *data)
 {
 	if (hid_call_registered >= MAX_HID_CALL)
 	{
@@ -294,12 +291,11 @@ static void usb_hid_event_cb(UsbCtrlRequest *ctrl)
 
 			if (send_reply_id)
 			{
-				CustomData *data = NULL;
-				FeatureReport_t call = usbkdb_searchCallback(send_reply_id, data);
+				USBKbdCtx *item = usbkdb_searchCallback(send_reply_id);
 				LOG_INFO("Call Reply report callback[%x]\n", send_reply_id);
-				if (call)
+				if (item)
 				{
-					len = call((uint8_t *)tmp_buf, sizeof(tmp_buf), data);
+					len = item->call((uint8_t *)tmp_buf, sizeof(tmp_buf), item->data);
 					usb_endpointWrite(USB_DIR_IN | 0, tmp_buf, len);
 					LOG_INFO("Sent[%d]\n", len);
 				}
@@ -314,11 +310,10 @@ static void usb_hid_event_cb(UsbCtrlRequest *ctrl)
 			{
 				if (tmp_buf[0] == GEN_CLASS_ID)
 				{
-					CustomData *data = NULL;
-					FeatureReport_t call = usbkdb_searchCallback(tmp_buf[1], data);
+					USBKbdCtx *item = usbkdb_searchCallback(tmp_buf[1]);
 					LOG_INFO("Call report callback[%x]\n", tmp_buf[1]);
-					if (call)
-						call((uint8_t *)tmp_buf, len, data);
+					if (item)
+						item->call((uint8_t *)tmp_buf, len, item->data);
 				}
 			}
 			break;

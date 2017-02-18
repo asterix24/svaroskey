@@ -57,16 +57,12 @@ typedef struct UsbKbdEvent
 	uint8_t codes[6];
 } UsbKbdEvent;
 
-typedef struct CustomData
-{
-	KFile *fd;
-	size_t len;
-} CustomData;
+struct CustomData;
 
-typedef int (*FeatureReport_t)(void *buff, size_t len, void *data);
+typedef int (*FeatureReport_t)(void *buff, size_t len, struct CustomData *data);
 
 void usbkbd_sendEvent(UsbKbdEvent *event);
-void usbkbd_registerCallback(FeatureReport_t call, uint8_t id, void *data);
+void usbkbd_registerCallback(FeatureReport_t call, uint8_t id, struct CustomData *data);
 void usbkbd_registerCallbackReply(uint8_t id);
 int usbkbd_init(int unit);
 
