@@ -56,6 +56,7 @@
  */
 
 #include "keymap.h"
+#include "usbbootloader.h"
 
 #include "hw/hw_keymap.h"
 
@@ -81,10 +82,12 @@
 #define NUM_LEDS       (NUM_LED_COLS * NUM_LED_ROWS)
 
 static Sipo sipo;
-
 static Eeprom eep;
 static I2c i2c;
-
+static struct CustomData data;
+static Flash internal_flash;
+static KFileBlock flash;
+static uint8_t leds_off[3]  = {0x00, 0x00, 0x00};
 
 static void hw_init(void)
 {
@@ -95,37 +98,6 @@ static void hw_init(void)
 	AFIO = (reg32_t *)(AFIO_BASE + 4);
 	*AFIO &= ~(0x07000000);
 	*AFIO |=  (0x04000000);
-}
-
-static uint8_t leds_off[3]  = {0x00, 0x00, 0x00};
-
-static Flash internal_flash;
-static KFileBlock flash;
-
-#define TRIM_START 45
-
-static int boot_callback(void *buff, size_t len, void *data)
-{
-	Flash *_data =(Flash *)data;
-	uint8_t *_buf = (uint8_t *)buff;
-	kprintf("Write blk[");
-	size_t ret = kblock_write(&(_data->blk), 0, _buf, 0, len);
-	//size_t ret = kblock_write(flash.blk, 0, _buf, 0, len);
-	kprintf("%d]\n", ret);
-	usbkbd_registerCallbackReply(0x17);
-	return 0;
-}
-
-static int boot1_callback(void *buff, size_t len, void *data)
-{
-	uint8_t *_buf = (uint8_t *)buff;
-	Flash *_data =(Flash *)data;
-	kblock_read(&(_data->blk), 0, _buf, 0, len);
-	//kblock_read(flash.blk, 0, _buf, 0, 64);
-	_buf[0] = 0x01;
-	_buf[1] = 0x17;
-	kprintf("Call Get: \n");
-	return len;
 }
 
 static void init(void)
@@ -155,9 +127,13 @@ static void init(void)
 	kblock_trim(&internal_flash.blk, TRIM_START, internal_flash.blk.blk_cnt - TRIM_START);
 	kfileblock_init(&flash, &internal_flash.blk);
 
+	usbbootloader_init();
+
+	data.fd = &flash.fd;
 	/* Initialize the USB keyboard device */
-	usbkbd_registerCallback(boot_callback, 0x13, (Flash *)&flash);
-	usbkbd_registerCallback(boot1_callback, 0x17, (Flash *)&flash);
+	usbkbd_registerCallback(usbbootloader_write, USBL_WRITE, &data);
+	usbkbd_registerCallback(usbbootloader_writeReply,   USBL_REPLY_WRITE, &data);
+	usbkbd_registerCallback(usbbootloader_nop,  USBL_NOP, &data);
 	usbkbd_init(0);
 
 	/* Initialize keymap */
@@ -196,12 +172,12 @@ int main(void)
 	proc_new(scan_proc, NULL, KERN_MINSTACKSIZE, NULL);
 
 	while (1) {
-		kblock_read(flash.blk, 0, buf, 0, 64);
+		kfile_read(&flash.fd, buf, 64);
 		kprintf("data[%d]:", 0);
 		for (int i=0; i<64; i++)
 			kprintf("%x ", buf[i]);
 		kprintf("\n");
 
-		timer_delay(1000);
+		timer_delay(5000);
 	}
 }
