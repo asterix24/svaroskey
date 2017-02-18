@@ -301,6 +301,12 @@ static void usb_hid_event_cb(UsbCtrlRequest *ctrl)
 				}
 				send_reply_id = 0;
 			}
+			else
+			{
+				memset(tmp_buf, 0, sizeof(tmp_buf));
+				usb_endpointWrite(USB_DIR_IN | 0, tmp_buf, 16);
+			}
+
 			break;
 		case HID_REQ_SET_REPORT:
 			LOG_INFO("%s: HID_REQ_SET_REPORT\n", __func__);
