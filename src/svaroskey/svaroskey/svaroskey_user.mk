@@ -14,7 +14,7 @@ svaroskey_USER_CSRC = \
 	$(svaroskey_SRC_PATH)/layouts.c \
 	$(svaroskey_SRC_PATH)/mappings.c \
 	$(svaroskey_SRC_PATH)/usbbootloader.c \
-	$(svaroskey_SRC_PATH)/hw/hw_keymap.c \
+	$(svaroskey_HW_PATH)/hw/hw_keymap.c \
 	#
 
 # Files included by the user.
@@ -35,6 +35,7 @@ svaroskey_USER_ASRC = \
 
 # Flags included by the user.
 svaroskey_USER_LDFLAGS = \
+	-Wl,-T svaroskey/stm32f103rb_rom.ld \
 	#
 
 # Flags included by the user.
