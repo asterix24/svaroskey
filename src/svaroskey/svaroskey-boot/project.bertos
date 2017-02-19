@@ -12,7 +12,7 @@ p5
 I4
 sS'PROJECT_NAME'
 p6
-Vsvaroskey
+Vsvaroskey-boot
 p7
 sS'TOOLCHAIN'
 p8
@@ -81,11 +81,11 @@ VSTM32F103RB
 p40
 sS'PROJECT_HW_PATH'
 p41
-Vsvaroskey
+Vsvaroskey-boot
 p42
 sS'PROJECT_SRC_PATH'
 p43
-Vsvaroskey
+Vsvaroskey-boot
 p44
 sS'PRESET'
 p45

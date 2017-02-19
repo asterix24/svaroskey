@@ -1,0 +1,14 @@
+#ifndef CFG_KEYMAP_H
+#define CFG_KEYMAP_H
+
+#ifdef SVAROSKEY
+	#define CONFIG_LAYOUT_REVISION   1
+	#define CONFIG_MAPPING_REVISION  1
+	#define CONFIG_INVERT_LAYOUT
+#else
+	#define CONFIG_LAYOUT_REVISION   0
+	#define CONFIG_MAPPING_REVISION  0
+#endif
+
+
+#endif /* CFG_KEYMAP_H */

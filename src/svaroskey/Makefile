@@ -13,5 +13,6 @@ default: all
 include bertos/config.mk
 
 include svaroskey/svaroskey.mk
+include svaroskey-boot/svaroskey-boot.mk
 
 include bertos/rules.mk
