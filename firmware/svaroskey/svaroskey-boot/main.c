@@ -128,9 +128,9 @@ static void init(void)
 
 	data.fd = &flash.fd;
 	/* Initialize the USB keyboard device */
-	usbkbd_registerCallback(usbbootloader_write, USBL_WRITE, &data);
-	usbkbd_registerCallback(usbbootloader_writeReply, USBL_REPLY_WRITE, &data);
-	usbkbd_registerCallback(usbbootloader_nop, USBL_NOP, &data);
+	usbkbd_registerCallback(usbbootloader_write, USBL_WRITE, false, &data);
+	usbkbd_registerCallback(usbbootloader_writeReply, USBL_REPLY_WRITE, true, &data);
+	usbkbd_registerCallback(usbbootloader_nop, USBL_NOP, false, &data);
 	usbkbd_init(0);
 
 

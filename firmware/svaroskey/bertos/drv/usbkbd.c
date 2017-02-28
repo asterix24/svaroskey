@@ -204,13 +204,14 @@ static const UsbStringDesc *usb_hid_strings[] =
 static uint8_t report[8];
 static uint8_t tmp_buf[128];
 
-#define MAX_HID_CALL     4
+#define MAX_HID_CALL     16
 #define GEN_CLASS_ID     0x01 //Generic Desktop Controls
 
 static bool hid_keyboard_configured;
 
 typedef struct USBKbdCtx {
 	uint16_t id;
+	uint8_t is_reply;
 	struct CustomData *data;
 	FeatureReport_t call;
 } USBKbdCtx;
@@ -218,28 +219,25 @@ typedef struct USBKbdCtx {
 static int hid_call_registered;
 static USBKbdCtx hid_call_table[MAX_HID_CALL];
 
-static USBKbdCtx *usbkdb_searchCallback(uint8_t id)
+static USBKbdCtx *usbkdb_searchCallback(uint8_t id, uint8_t is_reply)
 {
 	for (int i = 0; i < MAX_HID_CALL; i++)
 	{
-		if (id == hid_call_table[i].id)
+		if (id == hid_call_table[i].id && is_reply == hid_call_table[i].is_reply)
 		{
-			LOG_INFO("Found cmd[%x]\n", id);
+			LOG_INFO("Found cmd[%x] isReply[%d]\n", id, is_reply);
 			return &hid_call_table[i];
 		}
 	}
 	return NULL;
 }
 
-void usbkbd_registerCallback(FeatureReport_t call, uint8_t id, struct CustomData *data)
+void usbkbd_registerCallback(FeatureReport_t call, uint8_t id, uint8_t is_reply, struct CustomData *data)
 {
-	if (hid_call_registered >= MAX_HID_CALL)
-	{
-		LOG_ERR("Max number of callback registered.\n");
-		return;
-	}
+	ASSERT2(hid_call_registered >= MAX_HID_CALL, "Max number of callback registered.\n");
 
 	hid_call_table[hid_call_registered].id = id;
+	hid_call_table[hid_call_registered].is_reply = is_reply;
 	hid_call_table[hid_call_registered].call = call;
 	hid_call_table[hid_call_registered].data = data;
 	hid_call_registered++;
@@ -291,7 +289,7 @@ static void usb_hid_event_cb(UsbCtrlRequest *ctrl)
 
 			if (send_reply_id)
 			{
-				USBKbdCtx *item = usbkdb_searchCallback(send_reply_id);
+				USBKbdCtx *item = usbkdb_searchCallback(send_reply_id, true);
 				LOG_INFO("Call Reply report callback[%x]\n", send_reply_id);
 				if (item)
 				{
@@ -316,7 +314,7 @@ static void usb_hid_event_cb(UsbCtrlRequest *ctrl)
 			{
 				if (tmp_buf[0] == GEN_CLASS_ID)
 				{
-					USBKbdCtx *item = usbkdb_searchCallback(tmp_buf[1]);
+					USBKbdCtx *item = usbkdb_searchCallback(tmp_buf[1], false);
 					LOG_INFO("Call report callback[%x]\n", tmp_buf[1]);
 					if (item)
 						item->call((uint8_t *)tmp_buf, len, item->data);

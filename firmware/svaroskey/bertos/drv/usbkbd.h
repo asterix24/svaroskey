@@ -62,7 +62,7 @@ struct CustomData;
 typedef int (*FeatureReport_t)(void *buff, size_t len, struct CustomData *data);
 
 void usbkbd_sendEvent(UsbKbdEvent *event);
-void usbkbd_registerCallback(FeatureReport_t call, uint8_t id, struct CustomData *data);
+void usbkbd_registerCallback(FeatureReport_t call, uint8_t id, uint8_t is_reply, struct CustomData *data);
 void usbkbd_registerCallbackReply(uint8_t id);
 int usbkbd_init(int unit);
 
