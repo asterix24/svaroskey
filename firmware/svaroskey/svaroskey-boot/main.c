@@ -108,6 +108,8 @@ static void init(void)
 	/* Initialize debugging module (allow kprintf(), etc.) */
 	kdbg_init();
 
+	kprintf("==== HID Bootloader ====\n");
+
 	/* Initialize system timer */
 	timer_init();
 
@@ -127,10 +129,12 @@ static void init(void)
 	usbbootloader_init();
 
 	data.fd = &flash.fd;
+
 	/* Initialize the USB keyboard device */
 	usbkbd_registerCallback(usbbootloader_write, USBL_WRITE, false, &data);
-	usbkbd_registerCallback(usbbootloader_writeReply, USBL_REPLY_WRITE, true, &data);
+	usbkbd_registerCallback(usbbootloader_writeReply, USBL_WRITE, true, &data);
 	usbkbd_registerCallback(usbbootloader_nop, USBL_NOP, false, &data);
+	usbkbd_registerCallback(usbbootloader_reset, USBL_RESET, false, &data);
 	usbkbd_init(0);
 
 
@@ -140,19 +144,12 @@ static void init(void)
 
 }
 
-static uint8_t buf[128];
 int main(void)
 {
 	/* Hardware initialization */
 	init();
 
 	while (1) {
-		kfile_read(&flash.fd, buf, 64);
-		kprintf("data[%d]:", 0);
-		for (int i=0; i<64; i++)
-			kprintf("%x ", buf[i]);
-		kprintf("\n");
-
-		timer_delay(5000);
+		cpu_relax();
 	}
 }

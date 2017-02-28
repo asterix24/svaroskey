@@ -233,7 +233,7 @@ static USBKbdCtx *usbkdb_searchCallback(uint8_t id, uint8_t is_reply)
 
 void usbkbd_registerCallback(FeatureReport_t call, uint8_t id, uint8_t is_reply, struct CustomData *data)
 {
-	ASSERT2(hid_call_registered >= CONFIG_USBHID_MAX_CALLBACK, "Max number of callback registered.\n");
+	ASSERT2(hid_call_registered <= CONFIG_USBHID_MAX_CALLBACK, "Max number of callback registered.\n");
 
 	hid_call_table[hid_call_registered].id = id;
 	hid_call_table[hid_call_registered].is_reply = is_reply;

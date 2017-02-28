@@ -61,6 +61,10 @@
 #include "hw/hw_keymap.h"
 
 #include <cfg/debug.h>
+#define LOG_LEVEL  2
+#define LOG_FORMAT 0
+
+#include <cfg/log.h>
 
 #include <cpu/irq.h>
 #include <cpu/power.h>
@@ -111,6 +115,8 @@ static void init(void)
 	/* Initialize debugging module (allow kprintf(), etc.) */
 	kdbg_init();
 
+	kprintf("==== Main HID App ====\n");
+
 	/* Initialize system timer */
 	timer_init();
 
@@ -132,7 +138,7 @@ static void init(void)
 	data.fd = &flash.fd;
 	/* Initialize the USB keyboard device */
 	usbkbd_registerCallback(usbbootloader_write, USBL_WRITE, false, &data);
-	usbkbd_registerCallback(usbbootloader_writeReply,   USBL_REPLY_WRITE, true, &data);
+	usbkbd_registerCallback(usbbootloader_writeReply, USBL_WRITE, true, &data);
 	usbkbd_registerCallback(usbbootloader_nop,  USBL_NOP, false, &data);
 	usbkbd_init(0);
 
