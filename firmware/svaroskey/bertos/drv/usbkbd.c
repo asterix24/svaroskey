@@ -204,7 +204,6 @@ static const UsbStringDesc *usb_hid_strings[] =
 static uint8_t report[8];
 static uint8_t tmp_buf[128];
 
-#define MAX_HID_CALL     16
 #define GEN_CLASS_ID     0x01 //Generic Desktop Controls
 
 static bool hid_keyboard_configured;
@@ -217,11 +216,11 @@ typedef struct USBKbdCtx {
 } USBKbdCtx;
 
 static int hid_call_registered;
-static USBKbdCtx hid_call_table[MAX_HID_CALL];
+static USBKbdCtx hid_call_table[CONFIG_USBHID_MAX_CALLBACK];
 
 static USBKbdCtx *usbkdb_searchCallback(uint8_t id, uint8_t is_reply)
 {
-	for (int i = 0; i < MAX_HID_CALL; i++)
+	for (int i = 0; i < CONFIG_USBHID_MAX_CALLBACK; i++)
 	{
 		if (id == hid_call_table[i].id && is_reply == hid_call_table[i].is_reply)
 		{
@@ -234,7 +233,7 @@ static USBKbdCtx *usbkdb_searchCallback(uint8_t id, uint8_t is_reply)
 
 void usbkbd_registerCallback(FeatureReport_t call, uint8_t id, uint8_t is_reply, struct CustomData *data)
 {
-	ASSERT2(hid_call_registered >= MAX_HID_CALL, "Max number of callback registered.\n");
+	ASSERT2(hid_call_registered >= CONFIG_USBHID_MAX_CALLBACK, "Max number of callback registered.\n");
 
 	hid_call_table[hid_call_registered].id = id;
 	hid_call_table[hid_call_registered].is_reply = is_reply;

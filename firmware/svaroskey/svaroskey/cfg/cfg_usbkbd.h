@@ -75,4 +75,11 @@
  */
 #define USB_KEYBOARD_PRODUCT_ID     0xffff
 
+/**
+ * Define max number of callback associate to report hid commands.
+ *
+ * $WIZ$ type = "int"
+ */
+#define CONFIG_USBHID_MAX_CALLBACK     16
+
 #endif /* CFG_USB_KEYBOARD_H */
