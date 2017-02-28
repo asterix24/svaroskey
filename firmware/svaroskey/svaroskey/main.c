@@ -88,7 +88,6 @@
 static Sipo sipo;
 static Eeprom eep;
 static I2c i2c;
-static struct CustomData data;
 static Flash internal_flash;
 static KFileBlock flash;
 static uint8_t leds_off[3]  = {0x00, 0x00, 0x00};
@@ -133,13 +132,13 @@ static void init(void)
 	kblock_trim(&internal_flash.blk, TRIM_START, internal_flash.blk.blk_cnt - TRIM_START);
 	kfileblock_init(&flash, &internal_flash.blk);
 
-	usbbootloader_init();
+	usbbootloader_init(&flash.fd);
 
-	data.fd = &flash.fd;
 	/* Initialize the USB keyboard device */
-	usbkbd_registerCallback(usbbootloader_write, USBL_WRITE, false, &data);
-	usbkbd_registerCallback(usbbootloader_writeReply, USBL_WRITE, true, &data);
-	usbkbd_registerCallback(usbbootloader_nop,  USBL_NOP, false, &data);
+	usbkbd_registerCallback(usbbootloader_write, USBL_WRITE, false, NULL);
+	usbkbd_registerCallback(usbbootloader_writeReply, USBL_WRITE, true, NULL);
+	usbkbd_registerCallback(usbbootloader_nop, USBL_NOP, false, NULL);
+	usbkbd_registerCallback(usbbootloader_reset, USBL_RESET, false, NULL);
 	usbkbd_init(0);
 
 	/* Initialize keymap */

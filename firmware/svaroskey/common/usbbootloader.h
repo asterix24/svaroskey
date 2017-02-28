@@ -55,6 +55,6 @@ int usbbootloader_write(void *buff, size_t len, struct CustomData *data);
 int usbbootloader_writeReply(void *buff, size_t len, struct CustomData *data);
 int usbbootloader_nop(void *buff, size_t len, struct CustomData *data);
 int usbbootloader_reset(void *buff, size_t len, struct CustomData *data);
-void usbbootloader_init(void);
+void usbbootloader_init(KFile *fd);
 
 #endif /* USBBOOTLOADER_H */

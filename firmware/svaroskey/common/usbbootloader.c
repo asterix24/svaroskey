@@ -52,33 +52,46 @@
 #include <io/kfile_block.h>
 #include <io/stm32.h>
 
+static KFile *local_fd;
 
 int usbbootloader_write(void *buff, size_t len, struct CustomData *data)
 {
+	ASSERT(buff);
+	ASSERT(local_fd);
+
+	(void)data;
 	uint8_t *_buf = (uint8_t *)buff;
-	kprintf("Write blk[%p", data->fd);
-	size_t ret = kfile_write(data->fd, _buf, len);
-	kprintf("%d]\n", ret);
-	usbkbd_registerCallbackReply(0x17);
+	size_t ret = kfile_write(local_fd, _buf, len);
+	usbkbd_registerCallbackReply(USBL_WRITE);
+
+	LOG_INFO("Write Flash..len[%u] ret[%u], reply registered\n", len, ret);
 	return 0;
 }
 
 int usbbootloader_writeReply(void *buff, size_t len, struct CustomData *data)
 {
+	ASSERT(buff);
+	ASSERT(local_fd);
+
+	(void)data;
 	uint8_t *_buf = (uint8_t *)buff;
-	kfile_read(data->fd, _buf, len);
-	_buf[0] = 0x01;
-	_buf[1] = 0x17;
-	kprintf("Call Get: %d\n", len);
+	kfile_read(local_fd, _buf, len);
+	_buf[0] = 0x1;
+	_buf[1] = USBL_WRITE;
+	LOG_INFO("Write Flash Reply..ret[%u]\n", len);
 
 	return len;
 }
 
 int usbbootloader_nop(void *buff, size_t len, struct CustomData *data)
 {
+	ASSERT(buff);
+	ASSERT(local_fd);
+
 	(void)data;
 	uint8_t *_buf = (uint8_t *)buff;
-	kprintf("Nop[");
+	LOG_INFO("NOP..\n");
+	kprintf("[");
 	for (size_t i = 0; i < len; i++)
 		kprintf("%d", _buf[i]);
 	kprintf("]\n");
@@ -88,6 +101,9 @@ int usbbootloader_nop(void *buff, size_t len, struct CustomData *data)
 
 int usbbootloader_reset(void *buff, size_t len, struct CustomData *data)
 {
+	ASSERT(buff);
+	ASSERT(local_fd);
+
 	(void)buff;
 	(void)len;
 	(void)data;
@@ -103,6 +119,9 @@ int usbbootloader_reset(void *buff, size_t len, struct CustomData *data)
 	return 0;
 }
 
-void usbbootloader_init(void)
+void usbbootloader_init(KFile *fd)
 {
+	ASSERT(fd);
+
+	local_fd = fd;
 }

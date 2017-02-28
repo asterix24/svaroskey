@@ -220,11 +220,11 @@ static USBKbdCtx hid_call_table[CONFIG_USBHID_MAX_CALLBACK];
 
 static USBKbdCtx *usbkdb_searchCallback(uint8_t id, uint8_t is_reply)
 {
+	LOG_INFO("Search cmd[%x] isReply[%d]\n", id, is_reply);
 	for (int i = 0; i < CONFIG_USBHID_MAX_CALLBACK; i++)
 	{
 		if (id == hid_call_table[i].id && is_reply == hid_call_table[i].is_reply)
 		{
-			LOG_INFO("Found cmd[%x] isReply[%d]\n", id, is_reply);
 			return &hid_call_table[i];
 		}
 	}
