@@ -10,7 +10,7 @@ svaroskey-boot_PROGRAMMER_PORT = none
 # Files included by the user.
 svaroskey-boot_USER_CSRC = \
 	$(svaroskey-boot_SRC_PATH)/main.c \
-	$(svaroskey-boot_SRC_PATH)/usbbootloader.c \
+	common/usbbootloader.c \
 	#
 
 # Files included by the user.

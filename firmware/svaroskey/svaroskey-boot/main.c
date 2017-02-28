@@ -55,9 +55,10 @@
  *
  */
 
-#include "usbbootloader.h"
 
 #include <cfg/debug.h>
+
+#include <common/usbbootloader.h>
 
 #include <cpu/irq.h>
 #include <cpu/power.h>

@@ -56,7 +56,7 @@
  */
 
 #include "keymap.h"
-#include "usbbootloader.h"
+#include <common/usbbootloader.h>
 
 #include "hw/hw_keymap.h"
 
