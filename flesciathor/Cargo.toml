@@ -1,0 +1,11 @@
+[package]
+name = "mjolnir"
+version = "0.1.0"
+authors = ["d-dorazio <d.dorazio96@gmail.com>"]
+
+build = "build.rs"
+
+[dependencies]
+byteorder = "1"
+clap = "2"
+hidapi = "0.3"
