@@ -38,10 +38,19 @@
 #include "usbbootloader.h"
 
 #include <cfg/debug.h>
+#define LOG_LEVEL  3
+#define LOG_FORMAT 0
+
+#include <cfg/log.h>
+
 #include <cpu/power.h>
+#include <cpu/types.h>
+
 #include <drv/usbkbd.h>
 #include <drv/flash.h>
+
 #include <io/kfile_block.h>
+#include <io/stm32.h>
 
 
 int usbbootloader_write(void *buff, size_t len, struct CustomData *data)
@@ -73,6 +82,23 @@ int usbbootloader_nop(void *buff, size_t len, struct CustomData *data)
 	for (size_t i = 0; i < len; i++)
 		kprintf("%d", _buf[i]);
 	kprintf("]\n");
+
+	return 0;
+}
+
+int usbbootloader_reset(void *buff, size_t len, struct CustomData *data)
+{
+	(void)buff;
+	(void)len;
+	(void)data;
+
+	LOG_INFO("Reset board..\n");
+
+	#define SCB_AIRCR ((reg32_t *)(SCB_BASE + 0xC))
+	#define SCB_AIRCR_VECTKEY   0x05FA0000
+	#define SCB_AIRCR_RESET     BV(2)
+
+	*SCB_AIRCR = SCB_AIRCR_VECTKEY | (*SCB_AIRCR & 0xffff) | SCB_AIRCR_RESET;
 
 	return 0;
 }
