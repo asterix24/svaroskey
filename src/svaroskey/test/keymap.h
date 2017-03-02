@@ -2,6 +2,7 @@
 #define SVAROSKEY_KEYMAP_H
 
 #include "stdint.h"
+#include "config.h"
 
 /**
  * USB keyboard event descriptor.
@@ -28,7 +29,7 @@ typedef struct
 	uint8_t col_pin;
 } KeyMapping;
 
-UsbKbdEvent * keymap_get_next_code();
+int keymap_changed(void);
 void keymap_scan(void);
 void keymap_init(void);
 
