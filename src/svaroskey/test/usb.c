@@ -1,12 +1,10 @@
 #include "usb.h"
 
-#include "keycodes.h"
-
 UsbKbdEvent usb_event = { 0, { 0 } };
 static unsigned current_code_num = 0;
 
 // This goes into whatever configs do.
-static int isMod(scancode_t code) {
+static int isMod(keycode_t code) {
     if (code == KEY_LEFTCONTROL     ||
         code == KEY_LEFTSHIFT       ||
         code == KEY_LEFTALT         ||
@@ -20,7 +18,7 @@ static int isMod(scancode_t code) {
     return 0;
 }
 
-static int modShift(scancode_t code) {
+static int modShift(keycode_t code) {
     switch (code) {
         case KEY_LEFTCONTROL:
             return 7;
@@ -49,7 +47,7 @@ void usb_reset(void) {
     current_code_num = 0;
 }
 
-void usb_add_key(scancode_t code) {
+void usb_add_key(keycode_t code) {
     if (isMod(code)) {
         usb_event.mods |= 1 << modShift(code);
     } else if (current_code_num < USB_CODE_MAX) {

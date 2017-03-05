@@ -3,8 +3,7 @@
 
 #include "stdint.h"
 
-// FIXME: Remove (scancode_t)
-#include "layouts.h"
+#include "keycodes.h"
 
 #define USB_CODE_MAX 6
 
@@ -22,6 +21,6 @@ typedef struct UsbKbdEvent
 extern UsbKbdEvent usb_event;
 
 void usb_reset(void);
-void usb_add_key(scancode_t code);
+void usb_add_key(keycode_t code);
 
 #endif /* SVAROSKEY_USB_H */

@@ -16,12 +16,11 @@ int keyscan_changed(void) {
 
 static int is_key_pressed(int i)
 {
-    // FIXME: Call useful functions and remove SDL.
+    // FIXME: REDO THIS FUNCTION POLLING HARDWARE
 
     // For SDL the key codes are needed otherwise we can't read them.
     // The actual keyboard will just need numbers in the [0, KEYS_NUM) range.
     const Uint8 *state = SDL_GetKeyboardState(NULL);
-    // We only care about pressed keys
     return state[tmp_sdl_conversion(i)];
 }
 
@@ -46,6 +45,7 @@ void keyscan_scan(void)
         }
     }
     eeprom->pressed_keys_num = pressed_keys_num;
+
     if (eeprom->pressed_keys_num != eeprom->pressed_keys_old_num) {
         changed = 1;
     } else {

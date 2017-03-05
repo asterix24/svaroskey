@@ -3,7 +3,6 @@
 #include "keyscan.h"
 #include "stdio.h"
 #include "config.h"
-#include "layouts.h"
 #include "callbacks.h"
 #include "usb.h"
 
