@@ -4,20 +4,10 @@
 #include "stdio.h"
 #include "config.h"
 #include "layouts.h"
+#include "callbacks.h"
 #include "usb.h"
 
-int printEvent() {
-    usb_reset();
-    int i = 0;
-
-    for (i = 0; i < eeprom->pressed_keys_num; ++i) {
-        unsigned char key = eeprom->pressed_keys[i];
-        // Get key from layout (needed for SDL);
-        scancode_t code = tmp_sdl_conversion(key);
-
-        usb_add_key(code);
-    }
-
+int printUsbEvent() {
     printf("%d%d%d%d%d%d%d%d ",
         1 & (usb_event.mods >> 7),
         1 & (usb_event.mods >> 6),
@@ -29,7 +19,7 @@ int printEvent() {
         1 & (usb_event.mods >> 0));
 
     int counter = 0;
-    for (i = 0; i < USB_CODE_MAX; ++i) {
+    for (unsigned i = 0; i < USB_CODE_MAX; ++i) {
         uint8_t code = usb_event.codes[i];
         printf("[%d]", code);
         if      (code == 4) ++counter;
@@ -74,10 +64,12 @@ int main(void)
         SDL_PumpEvents();
         keyscan_scan();
         // We only print if something changed.
-        // if (keyscan_changed() && processCallbacks() && printEvent())
-        if (keyscan_changed() && printEvent())
-            break;
-
+        if (keyscan_changed()) {
+            processCallbacks();
+            // FIXME: To remove
+            if (printUsbEvent())
+                break;
+        }
         SDL_Delay(100);
     }
 
