@@ -1,8 +1,17 @@
 #ifndef SVAROSKEY_CALLBACKS_H
 #define SVAROSKEY_CALLBACKS_H
 
-typedef void Callback(unsigned char);
+#include "stdint.h"
 
-Callback writeKey;
+/**
+ * @brief USB keyboard event descriptor.
+ */
+typedef struct UsbKbdEvent
+{
+	uint8_t mods;
+	uint8_t codes[6];
+} UsbKbdEvent;
+
+void processCallbacks(void);
 
 #endif /* SVAROSKEY_CALLBACKS_H */

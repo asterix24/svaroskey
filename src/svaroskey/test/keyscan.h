@@ -1,19 +1,25 @@
 #ifndef SVAROSKEY_KEYSCAN_H
 #define SVAROSKEY_KEYSCAN_H
 
-#include "stdint.h"
+/**
+ * @brief Whether the last scan was different from the previous.
+ */
+int  keyscan_changed(void);
 
 /**
- * USB keyboard event descriptor.
+ * @brief Performs a scan on the physical keys.
+ *
+ * The result of the scan is saved in config memory, since it is dependent on
+ * the maximum number of physical keys read, which is a config parameter.
+ *
+ * eeprom->pressed_keys[]
+ * eeprom->pressed_keys_num
  */
-typedef struct UsbKbdEvent
-{
-	uint8_t mods;
-	uint8_t codes[6];
-} UsbKbdEvent;
-
-int  keyscan_changed(void);
 void keyscan_scan(void);
+
+/**
+ * @brief Performs any initialization of the physical keys reading system.
+ */
 void keyscan_init(void);
 
 #endif

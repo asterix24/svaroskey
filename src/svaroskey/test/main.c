@@ -47,11 +47,12 @@ int printEvent() {
 
     unsigned char mods = 0;
     for (i = 0; i < eeprom->pressed_keys_num; ++i) {
-        // Get key from layout (needed for SDL, see below)
-        KeyBinding * key = &keymap_layout[eeprom->pressed_keys[i]];
+        unsigned char key = eeprom->pressed_keys[i];
+        // Get key from layout (needed for SDL);
+        scancode_t code = tmp_sdl_conversion(key);
 
-        if (isMod(key->code))
-            mods |= 1 << modShift(key->code);
+        if (isMod(code))
+            mods |= 1 << modShift(code);
     }
     printf("%d%d%d%d%d%d%d%d ",
         1 & (mods >> 7),
@@ -65,14 +66,15 @@ int printEvent() {
 
     int counter = 0;
     for (i = 0; i < eeprom->pressed_keys_num; ++i) {
-        // Get key from layout (needed for SDL, see below)
-        KeyBinding * key = &keymap_layout[eeprom->pressed_keys[i]];
+        unsigned char key = eeprom->pressed_keys[i];
+        // Get key from layout (needed for SDL);
+        scancode_t code = tmp_sdl_conversion(key);
 
-        if (!isMod(key->code)) {
-            printf("[%d(%d)]", key->code, eeprom->pressed_keys[i]);
-            if (key->code == 4) ++counter;
-            else if (key->code == 22) ++counter;
-            else if (key->code == 7) ++counter;
+        if (!isMod(code)) {
+            printf("[%d(%d)]", code, key);
+            if      (code == 4) ++counter;
+            else if (code == 22) ++counter;
+            else if (code == 7) ++counter;
         }
     }
     printf("\n");

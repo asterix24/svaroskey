@@ -1,9 +1,10 @@
 #include "keyscan.h"
-#include "layouts.h"
 #include "config.h"
 
 #include <stdlib.h>
 
+// FIXME: To remove
+#include "layouts.h"
 #include <SDL.h>
 
 static int changed = 0;
@@ -14,14 +15,11 @@ int keyscan_changed(void) {
 
 static int is_key_pressed(int i)
 {
-    // Get key from layout (needed for SDL, see below)
-    KeyBinding * key = &keymap_layout[i];
-
     // For SDL the key codes are needed otherwise we can't read them.
     // The actual keyboard will just need numbers in the [0, KEYS_NUM) range.
     const Uint8 *state = SDL_GetKeyboardState(NULL);
     // We only care about pressed keys
-    return state[key->code];
+    return state[tmp_sdl_conversion(i)];
 }
 
 void keyscan_scan(void)

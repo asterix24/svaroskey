@@ -7,14 +7,14 @@
 
 typedef uint16_t scancode_t;
 
-typedef struct
-{
-	uint16_t mapping_id;
-	scancode_t code;
-} KeyBinding;
+// FIXME: This file and its .c will need to be removed.
+//
+// This is going to be replaced by the custom callback structures, even for
+// default mappings. Only the LAYOUT_SIZE macro and scancode_t will need to be
+// defined somewhere else.
+//
+// Here it is needed in order to interface with SDL.
 
-extern KeyBinding keymap_layout[LAYOUT_SIZE];
-
-KeyBinding * layout_get_key(int id);
+scancode_t tmp_sdl_conversion(unsigned char id);
 
 #endif /* SVAROSKEY_LAYOUTS_H */

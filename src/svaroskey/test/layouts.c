@@ -1,5 +1,12 @@
 #include "layouts.h"
+
 #include "keycodes.h"
+
+typedef struct
+{
+	uint16_t mapping_id;
+	scancode_t code;
+} KeyBinding;
 
 KeyBinding keymap_layout[LAYOUT_SIZE] = {
 	/* Row 1 */
@@ -132,3 +139,8 @@ KeyBinding keymap_layout[LAYOUT_SIZE] = {
 	{ 104,  KP_POINT          },
 	{ 105,  KP_ENTER          },
 };
+
+scancode_t tmp_sdl_conversion(unsigned char id) {
+    KeyBinding * key = &keymap_layout[id];
+    return key->code;
+}

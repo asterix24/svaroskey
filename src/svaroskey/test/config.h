@@ -3,16 +3,34 @@
 
 #include "layouts.h"
 
+/**
+ * @brief Id and parameter to perform an internal callback.
+ */
 typedef struct CallbackId {
     unsigned char code;
     unsigned char param;
 } CallbackId;
 
+/**
+ * @brief A callback with its priority.
+ *
+ * Each action has to have an UNIQUE priority, so that at runtime different
+ * actions can be sorted. This allows the result of executing all callbacks to
+ * be deterministic, no matter the order in which any physical key is read.
+ */
 typedef struct Action {
     CallbackId callback;
     unsigned char priority;
 } Action;
 
+/**
+ * @brief A node in the tree of Actions.
+ *
+ * Each node contains the Action for the currently selected key, and an array
+ * of alternatives, if other keys are simultaneously present.
+ *
+ * See callbacks.h to see how the structure is actually used.
+ */
 typedef struct Node {
     unsigned char key;
     Action action;
