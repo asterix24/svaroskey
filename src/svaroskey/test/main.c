@@ -4,78 +4,37 @@
 #include "stdio.h"
 #include "config.h"
 #include "layouts.h"
-
-// This goes into whatever configs do.
-static int isMod(scancode_t code) {
-    if (code == SDL_SCANCODE_LCTRL  ||
-        code == SDL_SCANCODE_LSHIFT ||
-        code == SDL_SCANCODE_LALT   ||
-        code == SDL_SCANCODE_LGUI   ||
-        code == SDL_SCANCODE_RCTRL  ||
-        code == SDL_SCANCODE_RSHIFT ||
-        code == SDL_SCANCODE_RALT   ||
-        code == SDL_SCANCODE_RGUI )
-    return 1;
-
-    return 0;
-}
-
-static int modShift(scancode_t code) {
-    switch (code) {
-        case SDL_SCANCODE_LCTRL :
-            return 7;
-        case SDL_SCANCODE_LSHIFT:
-            return 6;
-        case SDL_SCANCODE_LGUI  :
-            return 5;
-        case SDL_SCANCODE_LALT  :
-            return 4;
-        case SDL_SCANCODE_RALT  :
-            return 3;
-        case SDL_SCANCODE_RGUI  :
-            return 2;
-        case SDL_SCANCODE_RCTRL :
-            return 0;
-        case SDL_SCANCODE_RSHIFT:
-            return 1;
-    }
-    return 10;
-}
+#include "usb.h"
 
 int printEvent() {
+    usb_reset();
     int i = 0;
 
-    unsigned char mods = 0;
     for (i = 0; i < eeprom->pressed_keys_num; ++i) {
         unsigned char key = eeprom->pressed_keys[i];
         // Get key from layout (needed for SDL);
         scancode_t code = tmp_sdl_conversion(key);
 
-        if (isMod(code))
-            mods |= 1 << modShift(code);
+        usb_add_key(code);
     }
+
     printf("%d%d%d%d%d%d%d%d ",
-        1 & (mods >> 7),
-        1 & (mods >> 6),
-        1 & (mods >> 5),
-        1 & (mods >> 4),
-        1 & (mods >> 3),
-        1 & (mods >> 2),
-        1 & (mods >> 1),
-        1 & (mods >> 0));
+        1 & (usb_event.mods >> 7),
+        1 & (usb_event.mods >> 6),
+        1 & (usb_event.mods >> 5),
+        1 & (usb_event.mods >> 4),
+        1 & (usb_event.mods >> 3),
+        1 & (usb_event.mods >> 2),
+        1 & (usb_event.mods >> 1),
+        1 & (usb_event.mods >> 0));
 
     int counter = 0;
-    for (i = 0; i < eeprom->pressed_keys_num; ++i) {
-        unsigned char key = eeprom->pressed_keys[i];
-        // Get key from layout (needed for SDL);
-        scancode_t code = tmp_sdl_conversion(key);
-
-        if (!isMod(code)) {
-            printf("[%d(%d)]", code, key);
-            if      (code == 4) ++counter;
-            else if (code == 22) ++counter;
-            else if (code == 7) ++counter;
-        }
+    for (i = 0; i < USB_CODE_MAX; ++i) {
+        uint8_t code = usb_event.codes[i];
+        printf("[%d]", code);
+        if      (code == 4) ++counter;
+        else if (code == 22) ++counter;
+        else if (code == 7) ++counter;
     }
     printf("\n");
 

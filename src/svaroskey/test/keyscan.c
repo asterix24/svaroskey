@@ -3,9 +3,10 @@
 
 #include <stdlib.h>
 
-// FIXME: To remove
+// FIXME: To remove (is_key_pressed)
 #include "layouts.h"
 #include <SDL.h>
+// ----------------
 
 static int changed = 0;
 
@@ -15,6 +16,8 @@ int keyscan_changed(void) {
 
 static int is_key_pressed(int i)
 {
+    // FIXME: Call useful functions and remove SDL.
+
     // For SDL the key codes are needed otherwise we can't read them.
     // The actual keyboard will just need numbers in the [0, KEYS_NUM) range.
     const Uint8 *state = SDL_GetKeyboardState(NULL);
