@@ -41,9 +41,8 @@ int processCallbacks(void) {
         // since we scan keys from lowest to highest.
         unsigned char key = eeprom->edit_buffer[current_key];
 
-        // This is the node where we start looking for: the one for our current
-        // key. We want to know if the user is activating any combination that
-        // includes this key.
+        // This is the node for our current first key. We want to know if the
+        // user is activating any combination that includes this key.
         //
         // So we look if there's any combination that matches the keys we have.
         // If there is, we do its action and remove those keys from our next
