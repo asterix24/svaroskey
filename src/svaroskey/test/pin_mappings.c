@@ -1,11 +1,11 @@
-#include "mappings.h"
+#include "pin_mappings.h"
 
 #define KPA 0
 #define KPB 1
 #define KPC 2
 #define KPD 3
 
-KeyMapping keymap_mapping[] = {
+PinMapping pin_mapping[] = {
 #if (CONFIG_MAPPING_REVISION == 0)
 	/* #0 - #11 */
 	{ KPB, 0,  KPC, 0  }, { KPB, 1,  KPC, 0  }, { KPB, 3,  KPC, 0  },

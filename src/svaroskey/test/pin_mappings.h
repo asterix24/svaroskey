@@ -9,10 +9,8 @@ typedef struct
 	uint8_t row_pin;
 	uint8_t col_port;
 	uint8_t col_pin;
-} KeyMapping;
+} PinMapping;
 
-extern KeyMapping keymap_mapping[];
-
-KeyMapping * mapping_get_key(int id);
+extern PinMapping pin_mapping[];
 
 #endif /* SVAROSKEY_LAYOUTS_H */
