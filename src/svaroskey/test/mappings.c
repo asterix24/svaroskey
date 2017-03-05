@@ -1,5 +1,4 @@
-#include "keymap.h"
-#include "keycodes.h"
+#include "mappings.h"
 
 #define KPA 0
 #define KPB 1

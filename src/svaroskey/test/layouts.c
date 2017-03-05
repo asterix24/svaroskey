@@ -1,5 +1,4 @@
 #include "layouts.h"
-#include "keymap.h"
 #include "keycodes.h"
 
 KeyBinding keymap_layout[LAYOUT_SIZE] = {

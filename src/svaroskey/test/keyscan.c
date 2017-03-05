@@ -1,16 +1,15 @@
-#include "keymap.h"
+#include "keyscan.h"
 #include "layouts.h"
-#include "mappings.h"
+#include "config.h"
 
-#include <stdbool.h>
 #include <stdlib.h>
 
 #include <SDL.h>
 
-static int valid = 0;
+static int changed = 0;
 
-int keymap_changed(void) {
-    return valid;
+int keyscan_changed(void) {
+    return changed;
 }
 
 static int is_key_pressed(int i)
@@ -25,11 +24,11 @@ static int is_key_pressed(int i)
     return state[key->code];
 }
 
-void keymap_scan(void)
+void keyscan_scan(void)
 {
     unsigned i = 0, pressed_keys_num = 0;
     // Invalidate new reading, put old readings in old array.
-    valid = false;
+    changed = 0;
     {
         unsigned char * tmp = eeprom->pressed_keys_old;
         eeprom->pressed_keys_old = eeprom->pressed_keys;
@@ -47,17 +46,17 @@ void keymap_scan(void)
     }
     eeprom->pressed_keys_num = pressed_keys_num;
     if (eeprom->pressed_keys_num != eeprom->pressed_keys_old_num) {
-        valid = true;
+        changed = 1;
     } else {
         for (i = 0; i < eeprom->pressed_keys_num; ++i) {
             if (eeprom->pressed_keys[i] != eeprom->pressed_keys_old[i]) {
-                valid = true;
+                changed = 1;
                 break;
             }
         }
     }
 }
 
-void keymap_init(void)
+void keyscan_init(void)
 {
 }

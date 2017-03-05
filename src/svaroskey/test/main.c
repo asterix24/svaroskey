@@ -1,6 +1,6 @@
 #include <SDL.h>
 
-#include "keymap.h"
+#include "keyscan.h"
 #include "stdio.h"
 #include "config.h"
 #include "layouts.h"
@@ -69,7 +69,7 @@ int printEvent() {
         KeyBinding * key = &keymap_layout[eeprom->pressed_keys[i]];
 
         if (!isMod(key->code)) {
-            printf("[%d]", key->code);
+            printf("[%d(%d)]", key->code, eeprom->pressed_keys[i]);
             if (key->code == 4) ++counter;
             else if (key->code == 22) ++counter;
             else if (key->code == 7) ++counter;
@@ -97,7 +97,7 @@ int init() {
     }
 
     // Init the keyboard reading system.
-    keymap_init();
+    keyscan_init();
 
     return 0;
 }
@@ -111,9 +111,10 @@ int main(void)
     for (int i = 0; i < 10000; ++i)
     {
         SDL_PumpEvents();
-        keymap_scan();
+        keyscan_scan();
         // We only print if something changed.
-        if (keymap_changed() && printEvent())
+        // if (keyscan_changed() && processCallbacks() && printEvent())
+        if (keyscan_changed() && printEvent())
             break;
 
         SDL_Delay(100);

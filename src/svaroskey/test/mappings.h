@@ -1,7 +1,15 @@
 #ifndef SVAROSKEY_MAPPINGS_H
 #define SVAROSKEY_MAPPINGS_H
 
-#include "keymap.h"
+#include "stdint.h"
+
+typedef struct
+{
+	uint8_t row_port;
+	uint8_t row_pin;
+	uint8_t col_port;
+	uint8_t col_pin;
+} KeyMapping;
 
 extern KeyMapping keymap_mapping[];
 
