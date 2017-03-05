@@ -1,11 +1,7 @@
 #ifndef SVAROSKEY_LAYOUTS_H
 #define SVAROSKEY_LAYOUTS_H
 
-#include "stdint.h"
-
-#define LAYOUT_SIZE 106
-
-typedef uint16_t scancode_t;
+#include "keycodes.h"
 
 // FIXME: This file and its .c will need to be removed.
 //
@@ -15,6 +11,6 @@ typedef uint16_t scancode_t;
 //
 // Here it is needed in order to interface with SDL.
 
-scancode_t tmp_sdl_conversion(unsigned char id);
+keycode_t tmp_sdl_conversion(unsigned char id);
 
 #endif /* SVAROSKEY_LAYOUTS_H */

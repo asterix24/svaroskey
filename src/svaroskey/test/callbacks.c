@@ -4,6 +4,9 @@
 #include "usb.h"
 #include "assert.h"
 
+// Debugging
+#include "stdio.h"
+
 typedef void Callback(unsigned char);
 
 Callback noOp;
