@@ -4,6 +4,8 @@
 #include "usb.h"
 #include "assert.h"
 
+#include "stdlib.h"
+
 // Debugging
 #include "stdio.h"
 
@@ -20,6 +22,11 @@ static const unsigned callbacksNumber = sizeof(callbacks)/sizeof(callbacks[0]);
 
 #define DBG(x) fprintf(stderr, x "\n")
 #define DBGA(x, ...) fprintf(stderr, x "\n", __VA_ARGS__)
+
+// Used to qsort Actions on priority
+int priorityCompare(const void * p1, const void * p2) {
+    return (*(Action**)p1)->priority - (*(Action**)p2)->priority;
+}
 
 int processCallbacks(void) {
     DBG("resetting usb");
@@ -106,7 +113,9 @@ int processCallbacks(void) {
         DBG("Next key...");
         ++current_key;
     }
-    // Sort actions
+    // Sort actions by priority
+    DBG("Sorting...");
+    qsort(eeprom->actions, actions, sizeof(Action*), priorityCompare);
 
     DBG("Executing actions");
     // Execute actions
