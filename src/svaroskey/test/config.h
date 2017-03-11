@@ -1,12 +1,16 @@
 #ifndef SVAROSKEY_CONFIG_H
 #define SVAROSKEY_CONFIG_H
 
+/** @file */
+
+#include "stdint.h"
+
 /**
  * @brief Id and parameter to perform an internal callback.
  */
 typedef struct CallbackId {
-    unsigned char code;
-    unsigned char param;
+    uint8_t code;
+    uint8_t param;
 } CallbackId;
 
 /**
@@ -18,7 +22,7 @@ typedef struct CallbackId {
  */
 typedef struct Action {
     CallbackId callback;
-    unsigned char priority;
+    uint8_t priority;
 } Action;
 
 /**
@@ -26,8 +30,8 @@ typedef struct Action {
  */
 typedef struct Combination {
     Action action;
-    unsigned char keys_num;
-    unsigned char keys[];
+    uint8_t keys_num;
+    uint8_t keys[];
 } Combination;
 
 /**
@@ -43,7 +47,7 @@ typedef struct Combination {
 typedef struct Node {
     Action action;
 
-    unsigned char combinations_num;
+    uint8_t combinations_num;
     Combination * combinations;
 } Node;
 
@@ -56,17 +60,17 @@ typedef struct Node {
  */
 typedef struct EepromConfig {
     /// Max number of physical pressed keys at any one time
-    unsigned char max_pressed_keys;
+    uint8_t max_pressed_keys;
     /// Array of previosly pressed physical keys
-    unsigned char * pressed_keys_old;
+    uint8_t * pressed_keys_old;
     /// Array of currently pressed physical keys
-    unsigned char * pressed_keys;
+    uint8_t * pressed_keys;
     /// Array to to operations in.
-    unsigned char * edit_buffer;
+    uint8_t * edit_buffer;
     /// Number of previously pressed keys
-    unsigned char pressed_keys_old_num;
+    uint8_t pressed_keys_old_num;
     /// Number of currently pressed keys
-    unsigned char pressed_keys_num;
+    uint8_t pressed_keys_num;
     /// Array for triggerable actions of size max_pressed_keys
     Action ** actions;
 
@@ -75,11 +79,14 @@ typedef struct EepromConfig {
      *
      * This value, loaded from the config, MUST match the LAYOUT_SIZE value.
      */
-    unsigned char keys_num;
+    uint8_t keys_num;
     /// Callbacks datastructure
     Node * keys;
 } EepromConfig;
 
+/**
+ * @brief Pointer pointing to RAM memory loaded from EEPROM.
+ */
 extern EepromConfig * eeprom;
 
 #endif /* SVAROSKEY_CONFIG_H */

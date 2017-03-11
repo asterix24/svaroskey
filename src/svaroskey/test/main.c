@@ -6,7 +6,7 @@
 #include "callbacks.h"
 #include "usb.h"
 
-int printUsbEvent() {
+int print_usb_event() {
     printf("%d%d%d%d%d%d%d%d ",
         1 & (usb_event.mods >> 7),
         1 & (usb_event.mods >> 6),
@@ -18,7 +18,7 @@ int printUsbEvent() {
         1 & (usb_event.mods >> 0));
 
     int counter = 0;
-    for (unsigned i = 0; i < USB_CODE_MAX; ++i) {
+    for (uint8_t i = 0; i < USB_CODE_MAX; ++i) {
         uint8_t code = usb_event.codes[i];
         printf("[%d]", code);
         if      (code == 4) ++counter;
@@ -64,9 +64,8 @@ int main(void)
         keyscan_scan();
         // We only print if something changed.
         if (keyscan_changed()) {
-            processCallbacks();
-            // FIXME: To remove
-            if (printUsbEvent())
+            execute_callbacks();
+            if (print_usb_event())
                 break;
         }
         SDL_Delay(100);

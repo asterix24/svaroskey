@@ -122,4 +122,4 @@ keycode_t keycodes[] = {
     KEY_RIGHTGUI,
 };
 
-unsigned char keycodes_count = sizeof(keycodes)/sizeof(keycodes[0]);
+uint8_t keycodes_count = sizeof(keycodes)/sizeof(keycodes[0]);

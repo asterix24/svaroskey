@@ -4,7 +4,7 @@ UsbKbdEvent usb_event = { 0, { 0 } };
 static unsigned current_code_num = 0;
 
 // This goes into whatever configs do.
-static int isMod(keycode_t code) {
+static int is_mod(keycode_t code) {
     if (code == KEY_LEFTCONTROL     ||
         code == KEY_LEFTSHIFT       ||
         code == KEY_LEFTALT         ||
@@ -18,7 +18,7 @@ static int isMod(keycode_t code) {
     return 0;
 }
 
-static int modShift(keycode_t code) {
+static int mod_shift(keycode_t code) {
     switch (code) {
         case KEY_LEFTCONTROL:
             return 7;
@@ -48,8 +48,8 @@ void usb_reset(void) {
 }
 
 void usb_add_key(keycode_t code) {
-    if (isMod(code)) {
-        usb_event.mods |= 1 << modShift(code);
+    if (is_mod(code)) {
+        usb_event.mods |= 1 << mod_shift(code);
     } else if (current_code_num < USB_CODE_MAX) {
         usb_event.codes[current_code_num++] = code;
     }

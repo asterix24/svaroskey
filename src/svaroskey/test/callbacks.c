@@ -9,44 +9,44 @@
 // Debugging
 #include "stdio.h"
 
-typedef void Callback(unsigned char);
+typedef void Callback(uint8_t);
 
-Callback noOp;
-Callback writeKey;
+static Callback no_op;
+static Callback write_key;
 
-Callback * callbacks[] = {
-    noOp,
-    writeKey,
+static Callback * callbacks[] = {
+    no_op,
+    write_key,
 };
-static const unsigned callbacksNumber = sizeof(callbacks)/sizeof(callbacks[0]);
+#define callbacks_number (sizeof(callbacks)/sizeof(callbacks[0]))
 
 #define DBG(x) fprintf(stderr, x "\n")
 #define DBGA(x, ...) fprintf(stderr, x "\n", __VA_ARGS__)
 
 // Used to qsort Actions on priority
-int priorityCompare(const void * p1, const void * p2) {
+static int priority_compare(const void * p1, const void * p2) {
     return (*(Action**)p1)->priority - (*(Action**)p2)->priority;
 }
 
-int processCallbacks(void) {
+int execute_callbacks(void) {
     DBG("resetting usb");
     usb_reset();
 
     DBG("copying edit buffer");
     DBGA("Pressed keys: %d", eeprom->pressed_keys_num);
-    unsigned char keys_to_process = eeprom->pressed_keys_num;
+    uint8_t keys_to_process = eeprom->pressed_keys_num;
     // Copy pressed keys so that we can modify the vector if needed.
-    for (unsigned char i = 0; i < keys_to_process; ++i) {
+    for (uint8_t i = 0; i < keys_to_process; ++i) {
         DBGA("Copying key %d: %d", i, eeprom->pressed_keys[i]);
         eeprom->edit_buffer[i] = eeprom->pressed_keys[i];
     }
 
     DBGA("starting process, keys_to_process: %d", keys_to_process);
-    unsigned char actions = 0, current_key = 0;
+    uint8_t actions = 0, current_key = 0;
     while (keys_to_process > 0 && current_key < keys_to_process) {
         // Notice that the pressed_keys array is always sorted by definition,
         // since we scan keys from lowest to highest.
-        unsigned char key = eeprom->edit_buffer[current_key];
+        uint8_t key = eeprom->edit_buffer[current_key];
 
         // This is the node for our current first key. We want to know if the
         // user is activating any combination that includes this key.
@@ -62,14 +62,14 @@ int processCallbacks(void) {
         int cMatch = -1;
         DBG("Starting combinations...");
         DBGA("Combinations for this key: %d", p->combinations_num);
-        for (int c = 0; c < p->combinations_num; ++c) {
+        for (uint8_t c = 0; c < p->combinations_num; ++c) {
             // If we don't have enough keys to trigger this combination, skip it.
             if (keys_to_process - 1 < p->combinations[c].keys_num)
                 continue;
             // Try to match all keys in the combination with the ones we have.
             // q is for our keys. k for the combination's keys.
             // q skips the initial key, which we already know is there.
-            unsigned char q = 1, k = 0;
+            uint8_t q = 1, k = 0;
             while (q < keys_to_process && k < p->combinations[c].keys_num) {
                 // Since everything is sorted, if we're bigger we're done.
                 if (eeprom->edit_buffer[q] > p->combinations[c].keys[k])
@@ -94,7 +94,7 @@ int processCallbacks(void) {
             eeprom->actions[actions++] = &p->combinations[cMatch].action;
             // We also have to remove all keys from the combination from the
             // ones we are processing.
-            unsigned char q = 1, k = 0;
+            uint8_t q = 1, k = 0;
             while (q < keys_to_process && k < p->combinations[cMatch].keys_num) {
                 // Since everything is sorted, if we're bigger we're done.
                 if (eeprom->edit_buffer[q] > p->combinations[cMatch].keys[k])
@@ -102,7 +102,7 @@ int processCallbacks(void) {
                 // If we're equal, shift the edit_buffer by one, removing the
                 // equal element.
                 if (eeprom->edit_buffer[q] == p->combinations[cMatch].keys[k]) {
-                    for (unsigned char z = q; z < keys_to_process - 1; ++z)
+                    for (uint8_t z = q; z < keys_to_process - 1; ++z)
                         eeprom->edit_buffer[z] = eeprom->edit_buffer[z+1];
                     ++k;
                     --keys_to_process;
@@ -115,7 +115,7 @@ int processCallbacks(void) {
     }
     // Sort actions by priority
     DBG("Sorting...");
-    qsort(eeprom->actions, actions, sizeof(Action*), priorityCompare);
+    qsort(eeprom->actions, actions, sizeof(Action*), priority_compare);
 
     DBG("Executing actions");
     // Execute actions
@@ -123,7 +123,7 @@ int processCallbacks(void) {
         CallbackId * cbId = &eeprom->actions[a]->callback;
         DBGA("Code: %d, param: %d", cbId->code, cbId->param);
         // Don't go out of buffer
-        assert(cbId->code < callbacksNumber);
+        assert(cbId->code < callbacks_number);
         // Run callback
         callbacks[cbId->code](cbId->param);
     }
@@ -131,11 +131,11 @@ int processCallbacks(void) {
     return 0;
 }
 
-void noOp(unsigned char p) {
+static void no_op(uint8_t p) {
     (void)p;
 }
 
-void writeKey(unsigned char key) {
+static void write_key(uint8_t key) {
     DBGA("Adding key %d", key);
     assert(key < keycodes_count);
 

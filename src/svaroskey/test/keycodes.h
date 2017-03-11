@@ -1,11 +1,44 @@
 #ifndef SVAROSKEY_KEYCODES_H
 #define SVAROSKEY_KEYCODES_H
 
+/** @file */
+
 #include "stdint.h"
 
 #define LAYOUT_SIZE 106
 
 typedef uint16_t keycode_t;
+
+/**
+ * @brief Actually used keycodes in the keyboard.
+ *
+ * This array contains all the keycodes that can actually be accessed and used
+ * by the user via callbacks. The number of keycodes that the user will be able
+ * to access depends on the type of the callback parameters (uint8_t for
+ * example will only allow for 256 used characters - or less if this array's
+ * length is less).
+ *
+ * Any character that one wants to be able to use can be inserted in this array
+ * (be it ASCII, Unicode, whatever).
+ */
+extern keycode_t keycodes[];
+// NOTE: This can't be a define since it is defined in the .c
+extern uint8_t keycodes_count;
+
+/**
+ * @name Keycodes definitions.
+ *
+ * These defines are used in order to define each useful character's keycode
+ * (as in, ASCII/unicode/whatever).
+ *
+ * These defines are not limited in number, as we can preemptively define all
+ * possible characters we may want to use ever.
+ *
+ * After defining them, one can then use these to populate the keycodes[] array
+ * below in a readable manner.
+ *
+ * @{
+ */
 
 #define   KEY_A                 4
 #define   KEY_B                 5
@@ -127,6 +160,19 @@ typedef uint16_t keycode_t;
 #define   KEY_RIGHTALT          ((1 << 6) << 8) // 230
 #define   KEY_RIGHTGUI          ((1 << 7) << 8) // 231
 
+/// @}
+
+/**
+ * @name Keycodes IDs definitions.
+ *
+ * These defines are used solely in order to create legible code that accesses
+ * the keycodes[] array.
+ *
+ * They simply report which key is at which index in the keycodes[] array.
+ *
+ * @{
+ */
+
 #define   ID_KEY_A              0
 #define   ID_KEY_B              1
 #define   ID_KEY_C              2
@@ -247,9 +293,6 @@ typedef uint16_t keycode_t;
 #define   ID_KEY_RIGHTALT       117
 #define   ID_KEY_RIGHTGUI       118
 
-// Remember to add any additional key into the keycodes array below!
-
-extern keycode_t keycodes[];
-extern unsigned char keycodes_count;
+/// @}
 
 #endif /* SVAROSKEY_KEYCODES_H */

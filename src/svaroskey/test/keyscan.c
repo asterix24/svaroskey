@@ -30,7 +30,7 @@ void keyscan_scan(void)
     // Invalidate new reading, put old readings in old array.
     changed = 0;
     {
-        unsigned char * tmp = eeprom->pressed_keys_old;
+        uint8_t * tmp = eeprom->pressed_keys_old;
         eeprom->pressed_keys_old = eeprom->pressed_keys;
         eeprom->pressed_keys = tmp;
     }
