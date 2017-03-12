@@ -56,9 +56,10 @@
  */
 
 #include "keymap.h"
-#include <common/usbbootloader.h>
-
 #include "hw/hw_keymap.h"
+#include "hw/hw_boot.h"
+
+#include <common/usbbootloader.h>
 
 #include <cfg/debug.h>
 #define LOG_LEVEL  2
@@ -136,8 +137,6 @@ static void init(void)
 
 	/* Initialize the USB keyboard device */
 	usbkbd_registerCallback(usbbootloader_write, USBL_WRITE, false, NULL);
-	usbkbd_registerCallback(usbbootloader_writeReply, USBL_WRITE, true, NULL);
-	usbkbd_registerCallback(usbbootloader_nop, USBL_NOP, false, NULL);
 	usbkbd_registerCallback(usbbootloader_reset, USBL_RESET, false, NULL);
 	usbkbd_init(0);
 

@@ -55,6 +55,7 @@
  *
  */
 
+#include "hw/hw_boot.h"
 
 #include <cfg/debug.h>
 
@@ -78,11 +79,13 @@
 #define NUM_LED_COLS   8
 #define NUM_LEDS       (NUM_LED_COLS * NUM_LED_ROWS)
 
+void (*rom_start)(void) NORETURN;
+#define START_APP() rom_start()
+
 static Sipo sipo;
-static Eeprom eep;
-static I2c i2c;
 static Flash internal_flash;
 static KFileBlock flash;
+static BootMBR boot_mbr;
 static uint8_t leds_off[3]  = {0x00, 0x00, 0x00};
 
 static void hw_init(void)
@@ -128,19 +131,36 @@ static void init(void)
 	usbbootloader_init(&flash.fd);
 
 	/* Initialize the USB keyboard device */
+	usbkbd_registerCallback(usbbootloader_initBoot, USBL_INITBOOT, false, NULL);
+	usbkbd_registerCallback(usbbootloader_reply, USBL_REPLY, true, NULL);
 	usbkbd_registerCallback(usbbootloader_write, USBL_WRITE, false, NULL);
-	usbkbd_registerCallback(usbbootloader_writeReply, USBL_WRITE, true, NULL);
-	usbkbd_registerCallback(usbbootloader_nop, USBL_NOP, false, NULL);
 	usbkbd_registerCallback(usbbootloader_reset, USBL_RESET, false, NULL);
 	usbkbd_registerCallback(usbbootloader_echo, USBL_ECHO, false, NULL);
 	usbkbd_registerCallback(usbbootloader_echoReply, USBL_ECHO, true, NULL);
+
+	// Check if we should boot or not
+	kfile_seek(&flash.fd, 0, KSM_SEEK_SET);
+	kfile_read(&flash.fd, &boot_mbr, sizeof(boot_mbr));
+
+	if (boot_mbr.key == BOOTKEY)
+	{
+		//TODO: check crc32
+
+		if (boot_mbr.mode != BOOT_SAFEMODE)
+		{
+			// Ok boot to app.
+
+			/* load traget address from reset vector (4 bytes offset, 8 bytes length + CRC) */
+			rom_start = *(void **)(FLASH_BOOT_SIZE + 4 + sizeof(BootMBR));
+			kprintf("Jump to main application, address 0x%p\n", rom_start);
+			//	timer_cleanup();
+			IRQ_DISABLE;
+			START_APP();
+		}
+
+	}
+
 	usbkbd_init(0);
-
-
-	/* Initialize EEPROM */
-	i2c_init(&i2c, I2C_BITBANG0, CONFIG_I2C_FREQ);
-	eeprom_init(&eep, &i2c, EEPROM_24XX128, 0x00, false);
-
 }
 
 int main(void)

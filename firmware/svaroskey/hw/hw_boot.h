@@ -38,13 +38,11 @@
 #ifndef HW_BOOT_H
 #define HW_BOOT_H
 
-/**
- * Define bootloader flash size.
- *
- * Note: Remember that this size should be comply
- * to size defined in linker script, otherwise you
- * could not find the main program application.
- */
-#define FLASH_BOOT_SIZE 0x8000 // 32kbyte
+#include <io/cm3.h>
+
+#define FLASH_BOOT_SIZE  (64 * 1024)
+#define TRIM_START (FLASH_BOOT_SIZE / FLASH_PAGE_SIZE)
+#define MAX_FIRMWARE_SIZE ((F_SIZE * 1024) - FLASH_BOOT_SIZE)
+#define MIN_FIRMWARE_SIZE 8192
 
 #endif /*  HW_BOOT_H */
