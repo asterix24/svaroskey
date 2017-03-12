@@ -52,6 +52,8 @@
 #include <io/kfile_block.h>
 #include <io/stm32.h>
 
+#include <string.h>
+
 static KFile *local_fd;
 
 int usbbootloader_write(void *buff, size_t len, struct CustomData *data)
@@ -90,13 +92,44 @@ int usbbootloader_nop(void *buff, size_t len, struct CustomData *data)
 
 	(void)data;
 	uint8_t *_buf = (uint8_t *)buff;
-	LOG_INFO("NOP..\n");
-	kprintf("[");
-	for (size_t i = 0; i < len; i++)
-		kprintf("%d", _buf[i]);
-	kprintf("]\n");
+	LOG_INFO("NOP..");
+	LOG_INFOB(kdump(_buf, len));
 
 	return 0;
+}
+
+static uint8_t echo_buff[128];
+
+int usbbootloader_echo(void *buff, size_t len, struct CustomData *data)
+{
+	ASSERT(buff);
+	ASSERT(local_fd);
+
+	(void)data;
+	uint8_t *_buf = (uint8_t *)buff;
+
+	// Leave 2 byte for report id and command id
+	size_t echo_len = MIN(len, sizeof(echo_buff)-2);
+	LOG_INFO("ECHO..Recv len[%u], cpy len[%u]\n", len, echo_len);
+
+	// Prepare already reply buffer with command and report id
+	memset(echo_buff, 0, sizeof(echo_buff));
+	memcpy(echo_buff, _buf, echo_len);
+	usbkbd_registerCallbackReply(USBL_ECHO);
+	return 0;
+}
+
+int usbbootloader_echoReply(void *buff, size_t len, struct CustomData *data)
+{
+	ASSERT(buff);
+	ASSERT(local_fd);
+
+	(void)data;
+	uint8_t *_buf = (uint8_t *)buff;
+	memcpy(_buf, echo_buff, len);
+	LOG_INFO("ECHO Reply..ret[%u]\n", len);
+
+	return len;
 }
 
 int usbbootloader_reset(void *buff, size_t len, struct CustomData *data)

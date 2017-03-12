@@ -45,6 +45,7 @@
 #define USBL_RESET           0x17
 #define USBL_WRITE           0x13
 #define USBL_NOP             0x15
+#define USBL_ECHO            0x16
 
 struct CustomData
 {
@@ -55,6 +56,8 @@ int usbbootloader_write(void *buff, size_t len, struct CustomData *data);
 int usbbootloader_writeReply(void *buff, size_t len, struct CustomData *data);
 int usbbootloader_nop(void *buff, size_t len, struct CustomData *data);
 int usbbootloader_reset(void *buff, size_t len, struct CustomData *data);
+int usbbootloader_echo(void *buff, size_t len, struct CustomData *data);
+int usbbootloader_echoReply(void *buff, size_t len, struct CustomData *data);
 void usbbootloader_init(KFile *fd);
 
 #endif /* USBBOOTLOADER_H */

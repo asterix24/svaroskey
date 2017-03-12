@@ -132,6 +132,8 @@ static void init(void)
 	usbkbd_registerCallback(usbbootloader_writeReply, USBL_WRITE, true, NULL);
 	usbkbd_registerCallback(usbbootloader_nop, USBL_NOP, false, NULL);
 	usbkbd_registerCallback(usbbootloader_reset, USBL_RESET, false, NULL);
+	usbkbd_registerCallback(usbbootloader_echo, USBL_ECHO, false, NULL);
+	usbkbd_registerCallback(usbbootloader_echoReply, USBL_ECHO, true, NULL);
 	usbkbd_init(0);
 
 
