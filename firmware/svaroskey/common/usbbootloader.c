@@ -55,6 +55,10 @@
 #include <string.h>
 
 static KFile *local_fd;
+static UsbBootCtx usb_boot_ctx;
+static UsbBootReply usb_boot_reply;
+static UsbBootPayload usb_boot_payload;
+static uint32_t crc;
 
 int usbbootloader_write(void *buff, size_t len, struct CustomData *data)
 {
@@ -63,42 +67,30 @@ int usbbootloader_write(void *buff, size_t len, struct CustomData *data)
 
 	(void)data;
 	uint8_t *_buf = (uint8_t *)buff;
-	size_t ret = kfile_write(local_fd, _buf, len);
-	usbkbd_registerCallbackReply(USBL_WRITE);
+	memcpy(&usb_boot_payload, _buf, sizeof(UsbBootPayload));
+	size_t ret = kfile_write(local_fd, usb_boot_payload.data, usb_boot_payload.len);
+
+	usb_boot_reply.cmd = USBL_WRITE;
+	usb_boot_reply.report_id = 0x1;
+
+	if (ret != usb_boot_payload.len)
+	{
+		usb_boot_reply.status = BOOT_REPLY_ERR;
+		usb_boot_reply.index = usb_boot_ctx.index;
+	}
+	else
+	{
+		usb_boot_reply.status = BOOT_REPLY_OK;
+		usb_boot_reply.index = usb_boot_ctx.index++;
+	}
+
+	usbkbd_registerCallbackReply(USBL_REPLY);
 
 	LOG_INFO("Write Flash..len[%u] ret[%u], reply registered\n", len, ret);
 	return 0;
 }
 
-int usbbootloader_writeReply(void *buff, size_t len, struct CustomData *data)
-{
-	ASSERT(buff);
-	ASSERT(local_fd);
-
-	(void)data;
-	uint8_t *_buf = (uint8_t *)buff;
-	kfile_read(local_fd, _buf, len);
-	_buf[0] = 0x1;
-	_buf[1] = USBL_WRITE;
-	LOG_INFO("Write Flash Reply..ret[%u]\n", len);
-
-	return len;
-}
-
-int usbbootloader_nop(void *buff, size_t len, struct CustomData *data)
-{
-	ASSERT(buff);
-	ASSERT(local_fd);
-
-	(void)data;
-	uint8_t *_buf = (uint8_t *)buff;
-	LOG_INFO("NOP..");
-	LOG_INFOB(kdump(_buf, len));
-
-	return 0;
-}
-
-static uint8_t echo_buff[128];
+static uint8_t echo_buff[64];
 
 int usbbootloader_echo(void *buff, size_t len, struct CustomData *data)
 {
@@ -132,6 +124,41 @@ int usbbootloader_echoReply(void *buff, size_t len, struct CustomData *data)
 	return len;
 }
 
+int usbbootloader_initBoot(void *buff, size_t len, struct CustomData *data)
+{
+	ASSERT(buff);
+	ASSERT(local_fd);
+
+	(void)data;
+	(void)len;
+	uint8_t *_buf = (uint8_t *)buff;
+	memcpy(&usb_boot_payload, _buf, sizeof(UsbBootPayload));
+
+	usb_boot_reply.cmd = USBL_INITBOOT;
+	usb_boot_reply.report_id = 0x1;
+	usb_boot_reply.index = 0;
+	usb_boot_reply.status = BOOT_REPLY_OK;
+
+	usbkbd_registerCallbackReply(USBL_REPLY);
+	LOG_INFO("Init Boot..\n");
+	return 0;
+}
+
+int usbbootloader_reply(void *buff, size_t len, struct CustomData *data)
+{
+	ASSERT(buff);
+	ASSERT(local_fd);
+
+	(void)data;
+	(void)len;
+	uint8_t *_buf = (uint8_t *)buff;
+	memcpy(_buf, &usb_boot_reply, sizeof(usb_boot_reply));
+
+	memset(&usb_boot_reply, 0, sizeof(usb_boot_reply));
+	LOG_INFO("Reply..\n");
+	return sizeof(usb_boot_reply);
+}
+
 int usbbootloader_reset(void *buff, size_t len, struct CustomData *data)
 {
 	ASSERT(buff);
@@ -157,4 +184,6 @@ void usbbootloader_init(KFile *fd)
 	ASSERT(fd);
 
 	local_fd = fd;
+	memset(&usb_boot_ctx, 0, sizeof(usb_boot_ctx));
 }
+
