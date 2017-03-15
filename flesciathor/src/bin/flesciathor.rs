@@ -11,7 +11,7 @@ use clap::{App, Arg, ArgMatches, SubCommand};
 fn main() {
     let args = parse_args();
 
-    let api = hidapi::HidApi::new().expect("unable to initialize hidapi");
+    let api = hidapi::HidApi::get().expect("unable to initialize hidapi");
 
     if args.subcommand_matches("devices").is_some() {
         println!("Vendor Id: {:04x}\n", mjolnir::flash::VENDOR_ID);

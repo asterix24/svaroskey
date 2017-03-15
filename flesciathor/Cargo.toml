@@ -8,4 +8,4 @@ build = "build.rs"
 [dependencies]
 byteorder = "1"
 clap = "2"
-hidapi = "0.3"
+hidapi = { git = "https://github.com/d-dorazio/hidapi-rs" }

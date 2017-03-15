@@ -37,7 +37,7 @@ impl error::Error for FlashError {
     fn description(&self) -> &str {
         match self {
             &FlashError::IoErr(ref e) => e.description(),
-            &FlashError::HidErr(ref e) => e,
+            &FlashError::HidErr(ref e) => e.description(),
         }
     }
 }

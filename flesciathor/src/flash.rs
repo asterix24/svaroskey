@@ -54,19 +54,19 @@ pub fn flash(api: &HidApi, devinfo: &HidDeviceInfo, firmware: &str) -> FlashResu
         tmp
     };
 
-    let dev = api.open(devinfo.vendor_id, devinfo.product_id)?;
+    let mut dev = api.open(devinfo.vendor_id, devinfo.product_id)?;
 
-    _flash(&dev, &mut firmware)
+    _flash(&mut dev, &mut firmware)
 }
 
 
 
-fn _flash(dev: &HidDevice, firmware: &[u8]) -> FlashResult<()> {
+fn _flash(dev: &mut HidDevice, firmware: &[u8]) -> FlashResult<()> {
     _init_boot(dev, firmware)
 }
 
 
-fn _init_boot(dev: &HidDevice, firmware: &[u8]) -> FlashResult<()> {
+fn _init_boot(dev: &mut HidDevice, firmware: &[u8]) -> FlashResult<()> {
     let crc = firmware.iter().fold(0, |acc, x| acc | x);
 
     let mut buf = FlashBuffer::new(Cursor::new(vec![0; 16]));
