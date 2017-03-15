@@ -14,7 +14,7 @@ fn main() {
     let api = hidapi::HidApi::new().expect("unable to initialize hidapi");
 
     if args.subcommand_matches("devices").is_some() {
-        println!("Vendor Id: {}\n", mjolnir::flash::VENDOR_ID);
+        println!("Vendor Id: {:04x}\n", mjolnir::flash::VENDOR_ID);
 
         for d in api.devices() {
             print_device_info(&d);
@@ -56,8 +56,8 @@ fn parse_args<'a>() -> ArgMatches<'a> {
 
 fn print_device_info(d: &hidapi::HidDeviceInfo) {
     println!("Path: {}", d.path);
-    println!("VendorId: {}", d.vendor_id);
-    println!("ProductId: {}", d.product_id);
+    println!("VendorId: {:04x}", d.vendor_id);
+    println!("ProductId: {:04x}", d.product_id);
 
     if let Some(ref serial) = d.serial_number {
         println!("Serial Number: {}", serial);
