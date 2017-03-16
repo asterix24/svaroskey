@@ -217,6 +217,14 @@ typedef struct USBKbdCtx {
 
 static int hid_call_registered;
 static USBKbdCtx hid_call_table[CONFIG_USBHID_MAX_CALLBACK];
+static void *local_ctx;
+
+void usbkb_initCallbackCtx(void *ctx)
+{
+	ASSERT(ctx);
+
+	local_ctx = ctx;
+}
 
 static USBKbdCtx *usbkdb_searchCallback(uint8_t id, uint8_t is_reply)
 {

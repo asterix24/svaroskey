@@ -55,10 +55,8 @@
 #include <string.h>
 
 static KFile *local_fd;
-static UsbBootCtx usb_boot_ctx;
-static UsbBootReply usb_boot_reply;
-static UsbBootPayload usb_boot_payload;
-static uint32_t crc;
+static UsbBootCtx *local_usb_boot_ctx;
+static UsbBootProto usb_boot_msg;
 
 int usbbootloader_write(void *buff, size_t len, struct CustomData *data)
 {
@@ -179,11 +177,13 @@ int usbbootloader_reset(void *buff, size_t len, struct CustomData *data)
 	return 0;
 }
 
-void usbbootloader_init(KFile *fd)
+void usbbootloader_init(UsbBootCtx *ctx, KFile *fd)
 {
 	ASSERT(fd);
+	ASSERT(ctx);
 
+	memset(&ctx, 0, sizeof(UsbBootCtx));
 	local_fd = fd;
-	memset(&usb_boot_ctx, 0, sizeof(usb_boot_ctx));
+	local_usb_boot_ctx = ctx;
 }
 

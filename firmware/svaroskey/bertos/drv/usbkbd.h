@@ -64,6 +64,7 @@ typedef int (*FeatureReport_t)(void *buff, size_t len, struct CustomData *data);
 void usbkbd_sendEvent(UsbKbdEvent *event);
 void usbkbd_registerCallback(FeatureReport_t call, uint8_t id, uint8_t is_reply, struct CustomData *data);
 void usbkbd_registerCallbackReply(uint8_t id);
+void usbkb_initCallbackCtx(void *ctx);
 int usbkbd_init(int unit);
 
 #endif /* USBKBD_H */
