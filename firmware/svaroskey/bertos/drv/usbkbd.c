@@ -202,7 +202,7 @@ static const UsbStringDesc *usb_hid_strings[] =
 };
 
 static uint8_t report[8];
-static uint8_t tmp_buf[128];
+static uint8_t tmp_buf[64];
 
 #define GEN_CLASS_ID     0x01 //Generic Desktop Controls
 
@@ -289,7 +289,7 @@ static void usb_hid_event_cb(UsbCtrlRequest *ctrl)
 			}
 			break;
 		case HID_REQ_GET_REPORT:
-			LOG_INFO("%s: HID_REQ_GET_REPORT\n", __func__);
+			LOG_ERR("%s: HID_REQ_GET_REPORT\n", __func__);
 			usb_endpointWrite(USB_DIR_IN | 0, NULL, 0);
 
 			if (send_reply_id)
@@ -306,17 +306,23 @@ static void usb_hid_event_cb(UsbCtrlRequest *ctrl)
 			}
 			else
 			{
+				LOG_ERR("Replpy empty message..\n");
 				memset(tmp_buf, 0, sizeof(tmp_buf));
-				usb_endpointWrite(USB_DIR_IN | 0, tmp_buf, 16);
+				tmp_buf[0] = 0x1;
+				tmp_buf[1] = 0xff;
+				usb_endpointWrite(USB_DIR_IN | 0, tmp_buf, sizeof(tmp_buf));
 			}
 
 			break;
 		case HID_REQ_SET_REPORT:
 			LOG_INFO("%s: HID_REQ_SET_REPORT\n", __func__);
 			len = usb_endpointRead(USB_DIR_OUT | 0, (uint8_t *)tmp_buf, length);
+			len = usb_endpointRead(USB_DIR_OUT | 0, (uint8_t *)tmp_buf, length);
 			usb_endpointWrite(USB_DIR_IN | 0, NULL, 0);
+			LOG_ERR("Read len [%d]\n", len);
 			if (len > 2)
 			{
+				LOG_ERRB(kdump((uint8_t *)tmp_buf, len));
 				if (tmp_buf[0] == GEN_CLASS_ID)
 				{
 					USBKbdCtx *item = usbkdb_searchCallback(tmp_buf[1], false);
