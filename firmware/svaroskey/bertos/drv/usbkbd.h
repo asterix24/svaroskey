@@ -46,6 +46,7 @@
 #ifndef USBKBD_H
 #define USBKBD_H
 
+#include "common/usbbootloader.h"
 #include <io/kfile.h>
 
 /**
@@ -57,14 +58,15 @@ typedef struct UsbKbdEvent
 	uint8_t codes[6];
 } UsbKbdEvent;
 
-struct CustomData;
+struct UsbBootCtx;
 
-typedef int (*FeatureReport_t)(void *buff, size_t len, struct CustomData *data);
+typedef int (*FeatureReport_t)(struct UsbBootCtx *ctx, void *buff, size_t len);
 
 void usbkbd_sendEvent(UsbKbdEvent *event);
-void usbkbd_registerCallback(FeatureReport_t call, uint8_t id, uint8_t is_reply, struct CustomData *data);
+void usbkbd_registerCallback(FeatureReport_t call, uint8_t id, uint8_t is_reply);
 void usbkbd_registerCallbackReply(uint8_t id);
-void usbkb_initCallbackCtx(void *ctx);
+void usbkb_initCallbackCtx(struct UsbBootCtx *ctx);
 int usbkbd_init(int unit);
 
 #endif /* USBKBD_H */
+

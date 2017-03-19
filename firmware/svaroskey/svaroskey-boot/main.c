@@ -92,6 +92,8 @@ typedef struct BootMBR
 static Sipo sipo;
 static Flash internal_flash;
 static KFileBlock flash;
+static UsbBootCtx usb_boot_ctx;
+static UsbBootMsg usb_boot_msg;
 static BootMBR *boot_mbr;
 static uint8_t leds_off[3]  = {0x00, 0x00, 0x00};
 
@@ -135,16 +137,16 @@ static void init(void)
 	kblock_trim(&internal_flash.blk, TRIM_START, internal_flash.blk.blk_cnt - TRIM_START);
 	kfileblock_init(&flash, &internal_flash.blk);
 
-	usbbootloader_init(&flash.fd);
+	usbbootloader_init(&usb_boot_ctx, &usb_boot_msg, &flash.fd);
 
 	/* Initialize the USB keyboard device */
 	usbkb_initCallbackCtx(&usb_boot_ctx);
-	usbkbd_registerCallback(usbbootloader_initBoot, USBL_INITBOOT, false, NULL);
-	usbkbd_registerCallback(usbbootloader_reply, USBL_REPLY, true, NULL);
-	usbkbd_registerCallback(usbbootloader_write, USBL_WRITE, false, NULL);
-	usbkbd_registerCallback(usbbootloader_reset, USBL_RESET, false, NULL);
-	usbkbd_registerCallback(usbbootloader_echo, USBL_ECHO, false, NULL);
-	usbkbd_registerCallback(usbbootloader_echoReply, USBL_ECHO, true, NULL);
+	//usbkbd_registerCallback(usbbootloader_initBoot, USBL_INITBOOT, false, NULL);
+	//usbkbd_registerCallback(usbbootloader_echoReply, USBL_ECHO, true, NULL);
+	//usbkbd_registerCallback(usbbootloader_write, USBL_WRITE, false, NULL);
+	usbkbd_registerCallback(usbbootloader_echo, USBL_ECHO, false);
+	usbkbd_registerCallback(usbbootloader_reply, USBL_REPLY, true);
+	usbkbd_registerCallback(usbbootloader_reset, USBL_RESET, false);
 
 	// Check if we should boot or not
 	//

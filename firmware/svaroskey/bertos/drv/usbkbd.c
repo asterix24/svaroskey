@@ -217,12 +217,11 @@ typedef struct USBKbdCtx {
 
 static int hid_call_registered;
 static USBKbdCtx hid_call_table[CONFIG_USBHID_MAX_CALLBACK];
-static void *local_ctx;
+static UsbBootCtx *local_ctx;
 
-void usbkb_initCallbackCtx(void *ctx)
+void usbkb_initCallbackCtx(UsbBootCtx *ctx)
 {
 	ASSERT(ctx);
-
 	local_ctx = ctx;
 }
 
@@ -239,14 +238,13 @@ static USBKbdCtx *usbkdb_searchCallback(uint8_t id, uint8_t is_reply)
 	return NULL;
 }
 
-void usbkbd_registerCallback(FeatureReport_t call, uint8_t id, uint8_t is_reply, struct CustomData *data)
+void usbkbd_registerCallback(FeatureReport_t call, uint8_t id, uint8_t is_reply)
 {
 	ASSERT2(hid_call_registered <= CONFIG_USBHID_MAX_CALLBACK, "Max number of callback registered.\n");
 
 	hid_call_table[hid_call_registered].id = id;
 	hid_call_table[hid_call_registered].is_reply = is_reply;
 	hid_call_table[hid_call_registered].call = call;
-	hid_call_table[hid_call_registered].data = data;
 	hid_call_registered++;
 }
 
@@ -300,7 +298,7 @@ static void usb_hid_event_cb(UsbCtrlRequest *ctrl)
 				LOG_INFO("Call Reply report callback[%x]\n", send_reply_id);
 				if (item)
 				{
-					len = item->call((uint8_t *)tmp_buf, sizeof(tmp_buf), item->data);
+					len = item->call(local_ctx, (uint8_t *)tmp_buf, sizeof(tmp_buf));
 					usb_endpointWrite(USB_DIR_IN | 0, tmp_buf, len);
 					LOG_INFO("Sent[%d]\n", len);
 				}
@@ -324,7 +322,7 @@ static void usb_hid_event_cb(UsbCtrlRequest *ctrl)
 					USBKbdCtx *item = usbkdb_searchCallback(tmp_buf[1], false);
 					LOG_INFO("Call report callback[%x]\n", tmp_buf[1]);
 					if (item)
-						item->call((uint8_t *)tmp_buf, len, item->data);
+						item->call(local_ctx, (uint8_t *)tmp_buf, len);
 				}
 			}
 			break;

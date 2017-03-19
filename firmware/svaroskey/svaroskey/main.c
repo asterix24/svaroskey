@@ -91,6 +91,8 @@ static Eeprom eep;
 static I2c i2c;
 static Flash internal_flash;
 static KFileBlock flash;
+static UsbBootCtx usb_boot_ctx;
+static UsbBootMsg usb_boot_msg;
 static uint8_t leds_off[3]  = {0x00, 0x00, 0x00};
 
 static void hw_init(void)
@@ -133,11 +135,11 @@ static void init(void)
 	kblock_trim(&internal_flash.blk, TRIM_START, internal_flash.blk.blk_cnt - TRIM_START);
 	kfileblock_init(&flash, &internal_flash.blk);
 
-	usbbootloader_init(&flash.fd);
+	usbbootloader_init(&usb_boot_ctx, &usb_boot_msg, &flash.fd);
 
 	/* Initialize the USB keyboard device */
-	usbkbd_registerCallback(usbbootloader_write, USBL_WRITE, false, NULL);
-	usbkbd_registerCallback(usbbootloader_reset, USBL_RESET, false, NULL);
+	//usbkbd_registerCallback(usbbootloader_write, USBL_WRITE, false);
+	usbkbd_registerCallback(usbbootloader_reset, USBL_RESET, false);
 	usbkbd_init(0);
 
 	/* Initialize keymap */

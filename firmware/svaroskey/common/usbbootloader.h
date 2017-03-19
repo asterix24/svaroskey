@@ -38,8 +38,8 @@
 #ifndef USBBOOTLOADER_H
 #define USBBOOTLOADER_H
 
-#include "usbbootloader.h"
 #include <drv/usbkbd.h>
+#include <io/kfile.h>
 
 #define USBL_NONE            0xFF
 #define USBL_ECHO            0x0
@@ -54,36 +54,34 @@
 #define BOOT_REPLY_OK        1
 #define BOOT_REPLY_ERR       2
 
-struct CustomData
-{
-	KFile *fd;
-};
+#define USB_BOOT_MSGLEN     (64 - (sizeof(uint32_t) + \
+                                 2*sizeof(uint8_t) + \
+                                 1*sizeof(uint16_t)))
 
-typedef struct UsbBootProto
+typedef struct UsbBootMsg
 {
 	uint8_t report_id;
 	uint8_t cmd;
 	uint16_t crc;
-	size_t len;
-	uint8_t *data;
-} UsbBootProto;
+	uint32_t len;
+	uint8_t data[USB_BOOT_MSGLEN];
+} UsbBootMsg;
 
 typedef struct UsbBootCtx
 {
+	KFile *fd;
 	uint16_t flag;
 	uint16_t fw_index;
 	uint32_t fw_lenght;
-	UsbBootProto *msg;
+	UsbBootMsg *msg;
 } UsbBootCtx;
 
-
-
-int usbbootloader_initBoot(void *buff, size_t len, struct CustomData *data);
-int usbbootloader_write(void *buff, size_t len, struct CustomData *data);
-int usbbootloader_reset(void *buff, size_t len, struct CustomData *data);
-int usbbootloader_echo(void *buff, size_t len, struct CustomData *data);
-int usbbootloader_echoReply(void *buff, size_t len, struct CustomData *data);
-int usbbootloader_reply(void *buff, size_t len, struct CustomData *data);
-void usbbootloader_init(UsbBootCtx *ctx, KFile *fd);
+//int usbbootloader_initBoot(UsbBootCtx *ctx, void *buff, size_t len);
+//int usbbootloader_write(UsbBootCtx *ctx, void *buff, size_t len);
+int usbbootloader_reset(UsbBootCtx *ctx, void *buff, size_t len);
+int usbbootloader_echo(UsbBootCtx *ctx, void *buff, size_t len);
+int usbbootloader_reply(UsbBootCtx *ctx, void *buff, size_t len);
+void usbbootloader_init(UsbBootCtx *ctx, UsbBootMsg *msg, KFile *fd);
 
 #endif /* USBBOOTLOADER_H */
+
