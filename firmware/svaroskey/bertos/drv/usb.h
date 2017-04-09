@@ -235,7 +235,7 @@ typedef struct UsbStringDesc
 	struct {							\
 		UsbDescHeader __header;					\
 		uint8_t __body[sizeof(__text)];				\
-	} PACKED __name = {						\
+	} PACKED ALIGNED(4) __name = {					\
 		.__header = {						\
 			.bLength =					\
 				cpu_to_le16((uint16_t)sizeof(__name)),	\
