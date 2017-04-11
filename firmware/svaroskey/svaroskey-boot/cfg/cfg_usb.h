@@ -66,7 +66,7 @@
  * $WIZ$ type = "int"
  * $WIZ$ min = 1
  */
-#define CONFIG_USB_INTERFACE_MAX  1
+#define CONFIG_USB_INTERFACE_MAX  2
 
 /**
  * Maximum number of allocated endpoints (0 = auto).
