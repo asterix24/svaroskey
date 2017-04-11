@@ -41,10 +41,11 @@
 #include <drv/usbkbd.h>
 #include <io/kfile.h>
 
-#define FEAT_NONE            0xFF
-#define FEAT_ECHO            0x0
-#define FEAT_INITBOOT        0x1
-#define FEAT_WRITE           0x2
+#define FEAT_ERR             0xFF
+#define FEAT_NONE            0x0
+#define FEAT_ECHO            0x1
+#define FEAT_INITBOOT        0x2
+#define FEAT_WRITE           0x3
 #define FEAT_RESET           0x17
 
 #define BOOTKEY              0x1317

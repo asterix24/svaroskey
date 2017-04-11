@@ -189,16 +189,13 @@ static void NORETURN feature_proc(void)
 
 				if (ret < 0)
 				{
+					usb_feature_ctx.msg->cmd = FEAT_ERR;
 					memset(usb_feature_ctx.msg->data, 0x0, sizeof(usb_feature_ctx.msg->data));
 					sprintf((char *)usb_feature_ctx.msg->data, "Cmd Fail!");
 					usb_feature_ctx.msg->len = sizeof("Cmd Fail!");
 				}
-				else
-				{
-					sprintf((char *)usb_feature_ctx.msg->data, "Cmd Ok!");
-					usb_feature_ctx.msg->len = sizeof("Cmd Ok!");
-					usbkbd_featureWrite(usb_feature_ctx.msg, sizeof(UsbFeatureMsg), 100);
-				}
+
+				usbkbd_featureWrite(usb_feature_ctx.msg, sizeof(UsbFeatureMsg), 100);
 				memset(usb_feature_ctx.msg, 0x0, sizeof(UsbFeatureMsg));
 			}
 		}

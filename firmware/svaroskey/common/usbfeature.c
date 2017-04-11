@@ -53,6 +53,7 @@
 #include <io/stm32.h>
 
 #include <string.h>
+#include <stdio.h>
 
 #if 0
 int usbfeature_write(UsbBootCtx *ctx, void *buff, size_t len)
@@ -104,19 +105,6 @@ int usbfeature_initBoot(UsbBootCtx *ctx, void *buff, size_t len)
 	return 0;
 }
 
-int usbfeature_echo(UsbBootCtx *ctx, void *buff, size_t len)
-{
-	ASSERT(buff);
-	ASSERT(ctx);
-
-	uint8_t *_buf = (uint8_t *)buff;
-	LOG_INFO("ECHO..Recv len[%u]\n", len);
-	LOG_INFOB(kdump(_buf, len));
-	memcpy(ctx->msg, _buf, sizeof(UsbBootMsg));
-	usbkbd_registerCallbackReply(USBL_REPLY);
-	return 0;
-}
-
 #endif
 
 typedef struct UsbFeatureTable {
@@ -129,10 +117,23 @@ static int usbfeature_none(UsbFeatureCtx *ctx)
 	ASSERT(ctx);
 	ASSERT(ctx->msg);
 	(void) *ctx;
-	LOG_INFO("None MSG .. [%d]\n", ctx->msg->cmd);
+
+	memset(ctx->msg->data, 0x0, sizeof(ctx->msg->data));
+	sprintf((char *)ctx->msg->data, "Cmd Ok!");
+	ctx->msg->len = sizeof("Cmd Ok!");
+
+	LOG_INFO("NONE[%d].. len[%ld]\n", ctx->msg->cmd, ctx->msg->len);
 
 	return 0;
 }
+
+static int usbfeature_echo(UsbFeatureCtx *ctx)
+{
+	ASSERT(ctx);
+	LOG_INFO("ECHO[%d].. len[%ld]\n", ctx->msg->cmd, ctx->msg->len);
+	return 0;
+}
+
 
 static int usbfeature_reset(UsbFeatureCtx *ctx)
 {
@@ -151,8 +152,9 @@ static int usbfeature_reset(UsbFeatureCtx *ctx)
 
 static const UsbFeatureTable feature_cmd_table[] =
 {
-	{ FEAT_RESET,   usbfeature_reset },
 	{ FEAT_NONE,    usbfeature_none  },
+	{ FEAT_ECHO,    usbfeature_echo  },
+	{ FEAT_RESET,   usbfeature_reset },
 	{ 0,            NULL             }
 };
 
