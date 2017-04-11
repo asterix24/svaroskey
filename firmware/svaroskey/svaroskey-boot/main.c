@@ -59,7 +59,7 @@
 
 #include <cfg/debug.h>
 
-#include <common/usbbootloader.h>
+#include <common/usbfeature.h>
 
 #include <cpu/irq.h>
 #include <cpu/power.h>
@@ -73,6 +73,12 @@
 #include <io/kfile_block.h>
 
 #include <kern/proc.h>
+
+#include <mware/formatwr.h>
+
+#include <string.h> /* strcmp() */
+#include <stdio.h>
+
 
 #define MAX_BRIGHTNESS 100
 #define NUM_LED_ROWS   8
@@ -92,8 +98,8 @@ typedef struct BootMBR
 static Sipo sipo;
 static Flash internal_flash;
 static KFileBlock flash;
-static UsbBootCtx usb_boot_ctx;
-static UsbBootMsg usb_boot_msg;
+static UsbFeatureCtx usb_feature_ctx;
+static UsbFeatureMsg usb_feature_msg;
 static BootMBR *boot_mbr;
 static uint8_t leds_off[3]  = {0x00, 0x00, 0x00};
 
@@ -137,21 +143,10 @@ static void init(void)
 	kblock_trim(&internal_flash.blk, TRIM_START, internal_flash.blk.blk_cnt - TRIM_START);
 	kfileblock_init(&flash, &internal_flash.blk);
 
-	usbbootloader_init(&usb_boot_ctx, &usb_boot_msg, &flash.fd);
+	usbfeature_init(&usb_feature_ctx, &usb_feature_msg, &flash.fd);
 
 	/* Initialize the USB keyboard device */
-	usbkb_initCallbackCtx(&usb_boot_ctx);
-	//usbkbd_registerCallback(usbbootloader_initBoot, USBL_INITBOOT, false, NULL);
-	//usbkbd_registerCallback(usbbootloader_echoReply, USBL_ECHO, true, NULL);
-	//usbkbd_registerCallback(usbbootloader_write, USBL_WRITE, false, NULL);
-	usbkbd_registerCallback(usbbootloader_echo, USBL_ECHO, false);
-	usbkbd_registerCallback(usbbootloader_reply, USBL_REPLY, true);
-	usbkbd_registerCallback(usbbootloader_reset, USBL_RESET, false);
-
-	// Check if we should boot or not
-	//
-	/*
-	if (boot_mbr->key == BOOTKEY)
+	/* if (boot_mbr->key == BOOTKEY)
 	{
 		//TODO: check crc32
 
@@ -169,7 +164,47 @@ static void init(void)
 
 	} */
 
+	usbkbd_eventRegister();
 	usbkbd_init(0);
+}
+
+static uint8_t tmp[64];
+static void NORETURN feature_proc(void)
+{
+	/* Periodically scan the keyboard */
+	while (1)
+	{
+		ssize_t len = usbkbd_featureRead(tmp, sizeof(tmp), 100);
+		if (len > 0)
+		{
+			kdump(tmp, sizeof(tmp));
+			memcpy(usb_feature_ctx.msg, tmp, sizeof(UsbFeatureMsg));
+
+			FeatureReport_t call = usbfeature_searchCallback(usb_feature_ctx.msg->cmd);
+
+			int ret = 0;
+			if (call)
+			{
+				ret = call(&usb_feature_ctx);
+
+				if (ret < 0)
+				{
+					memset(usb_feature_ctx.msg->data, 0x0, sizeof(usb_feature_ctx.msg->data));
+					sprintf((char *)usb_feature_ctx.msg->data, "Cmd Fail!");
+					usb_feature_ctx.msg->len = sizeof("Cmd Fail!");
+				}
+				else
+				{
+					sprintf((char *)usb_feature_ctx.msg->data, "Cmd Ok!");
+					usb_feature_ctx.msg->len = sizeof("Cmd Ok!");
+					usbkbd_featureWrite(usb_feature_ctx.msg, sizeof(UsbFeatureMsg), 100);
+				}
+				memset(usb_feature_ctx.msg, 0x0, sizeof(UsbFeatureMsg));
+			}
+		}
+
+		timer_delay(100);
+	}
 }
 
 int main(void)
@@ -177,7 +212,9 @@ int main(void)
 	/* Hardware initialization */
 	init();
 
+	proc_new(feature_proc, NULL, 0x400, NULL);
+
 	while (1) {
-		cpu_relax();
+		timer_delay(1000);
 	}
 }
