@@ -26,27 +26,26 @@
  * invalidate any other reasons why the executable file might be covered by
  * the GNU General Public License.
  *
- * Copyright 2010 Develer S.r.l. (http://www.develer.com/)
+ * Copyright 2017 Develer S.r.l. (http://www.develer.com/)
  *
  * -->
  *
  * \author Daniele Basile <asterix@develer.com>
  *
- * \brief report hid usb bootloader interface.
+ * \brief report hid usb feature interface.
  */
 
-#ifndef USBBOOTLOADER_H
-#define USBBOOTLOADER_H
+#ifndef USBFEATURE_H
+#define USBFEATURE_H
 
 #include <drv/usbkbd.h>
 #include <io/kfile.h>
 
-#define USBL_NONE            0xFF
-#define USBL_ECHO            0x0
-#define USBL_REPLY           0x2
-#define USBL_INITBOOT        0x3
-#define USBL_WRITE           0x4
-#define USBL_RESET           0x17
+#define FEAT_NONE            0xFF
+#define FEAT_ECHO            0x0
+#define FEAT_INITBOOT        0x1
+#define FEAT_WRITE           0x2
+#define FEAT_RESET           0x17
 
 #define BOOTKEY              0x1317
 #define BOOT_SAFEMODE        0x1
@@ -54,34 +53,32 @@
 #define BOOT_REPLY_OK        1
 #define BOOT_REPLY_ERR       2
 
-#define USB_BOOT_MSGLEN     (64 - (sizeof(uint32_t) + \
-                                 2*sizeof(uint8_t) + \
-                                 1*sizeof(uint16_t)))
+#define USB_FEATURE_MSGLEN     (64 - (sizeof(uint32_t) + \
+                                 2*sizeof(uint16_t)))
 
-typedef struct UsbBootMsg
+typedef struct UsbFeatureMsg
 {
-	uint8_t report_id;
-	uint8_t cmd;
+	uint16_t cmd;
 	uint16_t crc;
 	uint32_t len;
-	uint8_t data[USB_BOOT_MSGLEN];
-} UsbBootMsg;
+	uint8_t data[USB_FEATURE_MSGLEN];
+} UsbFeatureMsg;
 
-typedef struct UsbBootCtx
+typedef struct UsbFeatureCtx
 {
 	KFile *fd;
 	uint16_t flag;
 	uint16_t fw_index;
 	uint32_t fw_lenght;
-	UsbBootMsg *msg;
-} UsbBootCtx;
+	UsbFeatureMsg *msg;
+} UsbFeatureCtx;
 
-//int usbbootloader_initBoot(UsbBootCtx *ctx, void *buff, size_t len);
-//int usbbootloader_write(UsbBootCtx *ctx, void *buff, size_t len);
-int usbbootloader_reset(UsbBootCtx *ctx, void *buff, size_t len);
-int usbbootloader_echo(UsbBootCtx *ctx, void *buff, size_t len);
-int usbbootloader_reply(UsbBootCtx *ctx, void *buff, size_t len);
-void usbbootloader_init(UsbBootCtx *ctx, UsbBootMsg *msg, KFile *fd);
 
-#endif /* USBBOOTLOADER_H */
+typedef int (*FeatureReport_t)(UsbFeatureCtx *ctx);
+
+/* Commands */
+void usbfeature_init(UsbFeatureCtx *ctx, UsbFeatureMsg *msg, KFile *fd);
+FeatureReport_t usbfeature_searchCallback(uint8_t id);
+
+#endif /* USBFEATURE_H */
 

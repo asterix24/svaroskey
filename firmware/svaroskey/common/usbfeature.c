@@ -35,7 +35,7 @@
  * \brief report hid usb bootloader.
  */
 
-#include "usbbootloader.h"
+#include "usbfeature.h"
 
 #include <cfg/debug.h>
 #define LOG_LEVEL  3
@@ -55,7 +55,7 @@
 #include <string.h>
 
 #if 0
-int usbbootloader_write(UsbBootCtx *ctx, void *buff, size_t len)
+int usbfeature_write(UsbBootCtx *ctx, void *buff, size_t len)
 {
 	ASSERT(buff);
 	ASSERT(local_fd);
@@ -84,7 +84,7 @@ int usbbootloader_write(UsbBootCtx *ctx, void *buff, size_t len)
 	return 0;
 }
 
-int usbbootloader_initBoot(UsbBootCtx *ctx, void *buff, size_t len)
+int usbfeature_initBoot(UsbBootCtx *ctx, void *buff, size_t len)
 {
 	ASSERT(buff);
 	ASSERT(local_fd);
@@ -104,22 +104,7 @@ int usbbootloader_initBoot(UsbBootCtx *ctx, void *buff, size_t len)
 	return 0;
 }
 
-int usbbootloader_reply(UsbBootCtx *ctx, void *buff, size_t len)
-{
-	ASSERT(ctx);
-	ASSERT(buff);
-	(void)len;
-	uint8_t *_buf = (uint8_t *)buff;
-	memcpy(_buf, &usb_boot_reply, sizeof(usb_boot_reply));
-
-	memset(&usb_boot_reply, 0, sizeof(usb_boot_reply));
-	LOG_INFO("Reply..\n");
-	return sizeof(usb_boot_reply);
-}
-
-#endif
-
-int usbbootloader_echo(UsbBootCtx *ctx, void *buff, size_t len)
+int usbfeature_echo(UsbBootCtx *ctx, void *buff, size_t len)
 {
 	ASSERT(buff);
 	ASSERT(ctx);
@@ -132,24 +117,26 @@ int usbbootloader_echo(UsbBootCtx *ctx, void *buff, size_t len)
 	return 0;
 }
 
-int usbbootloader_reply(UsbBootCtx *ctx, void *buff, size_t len)
+#endif
+
+typedef struct UsbFeatureTable {
+	uint16_t id;
+	FeatureReport_t call;
+} UsbFeatureTable;
+
+static int usbfeature_none(UsbFeatureCtx *ctx)
 {
 	ASSERT(ctx);
-	ASSERT(buff);
+	ASSERT(ctx->msg);
+	(void) *ctx;
+	LOG_INFO("None MSG .. [%d]\n", ctx->msg->cmd);
 
-	(void)len;
-	uint8_t *_buf = (uint8_t *)buff;
-	LOG_INFO("Reply..MSG cmd[%x]\n", ctx->msg->cmd);
-	memcpy(_buf, ctx->msg, sizeof(UsbBootMsg));
-	return sizeof(UsbBootMsg);
+	return 0;
 }
 
-
-int usbbootloader_reset(UsbBootCtx *ctx, void *buff, size_t len)
+static int usbfeature_reset(UsbFeatureCtx *ctx)
 {
 	(void)ctx;
-	(void)buff;
-	(void)len;
 
 	LOG_INFO("Reset board..\n");
 
@@ -162,14 +149,35 @@ int usbbootloader_reset(UsbBootCtx *ctx, void *buff, size_t len)
 	return 0;
 }
 
-void usbbootloader_init(UsbBootCtx *ctx, UsbBootMsg *msg, KFile *fd)
+static const UsbFeatureTable feature_cmd_table[] =
+{
+	{ FEAT_RESET,   usbfeature_reset },
+	{ FEAT_NONE,    usbfeature_none  },
+	{ 0,            NULL             }
+};
+
+FeatureReport_t usbfeature_searchCallback(uint8_t id)
+{
+	LOG_INFO("Search cmd[%x]\n", id);
+	for (int i = 0;; i++)
+	{
+		if (feature_cmd_table[i].id == 0 && feature_cmd_table[i].call == NULL)
+			return NULL;
+
+		if (id == feature_cmd_table[i].id)
+			return feature_cmd_table[i].call;
+	}
+	return NULL;
+}
+
+void usbfeature_init(UsbFeatureCtx *ctx, UsbFeatureMsg *msg, KFile *fd)
 {
 	ASSERT(fd);
 	ASSERT(ctx);
 	ASSERT(msg);
 
-	memset(ctx, 0, sizeof(UsbBootCtx));
-	memset(msg, 0, sizeof(UsbBootMsg));
+	memset(ctx, 0, sizeof(UsbFeatureCtx));
+	memset(msg, 0, sizeof(UsbFeatureMsg));
 
 	ctx->msg = msg;
 	ctx->fd = fd;
