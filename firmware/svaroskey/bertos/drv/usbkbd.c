@@ -36,7 +36,6 @@
  *
  */
 
-#include "usb_hid.h"
 #include "usbkbd.h"
 
 #include "cfg/cfg_usbkbd.h"
@@ -52,25 +51,35 @@
 
 #include <cpu/power.h> // cpu_relax()
 
+#include <drv/timer.h>
 #include <drv/usb.h>
 #include <drv/usb_endpoint.h>
+#include <drv/usb_hid.h>
 
-#include <string.h>
+#include <kern/signal.h>
+
+#include <mware/event.h>
 
 
 /*
  * HID device configuration (usb-keyboard)
  */
-#define USB_HID_VENDOR_ID	USB_KEYBOARD_VENDOR_ID
-#define USB_HID_PRODUCT_ID	USB_KEYBOARD_PRODUCT_ID
+#define USB_HID_VENDOR_ID           USB_KEYBOARD_VENDOR_ID
+#define USB_HID_PRODUCT_ID          USB_KEYBOARD_PRODUCT_ID
 
-#define USB_HID_INTERFACES	1
-#define USB_HID_ENDPOINTS	1
+#define USB_HID_INTERFACES          2
+#define USB_HID_ENDPOINTS           2
 
-#define USB_STRING_MANUFACTURER 1
-#define USB_STRING_PRODUCT	2
+#define USB_STRING_MANUFACTURER     1
+#define USB_STRING_PRODUCT          2
 
-#define USB_HID_REPORT_EP	(USB_DIR_IN | USB_KBD_EP_REPORT)
+#define USB_HID_REPORT_EP           (USB_DIR_IN | USB_KBD_EP_REPORT)
+#define USB_CUSTOM_HID_REPORT_EP    (USB_DIR_IN | 2)
+
+/* HID Report Types */
+#define HID_REPORT_INPUT	0x01
+#define HID_REPORT_OUTPUT	0x02
+#define HID_REPORT_FEATURE	0x03
 
 static UsbDeviceDesc usb_hid_device_descriptor =
 {
@@ -124,6 +133,7 @@ static const uint8_t hid_report_descriptor[] =
 	0x05, 0x01, // Usage Page (Generic Desktop)
 	0x09, 0x06, // Usage (Keyboard)
 	0xA1, 0x01, // Collection (Application)
+
 	0x05, 0x07, // Usage Page (Key Codes)
 	0x19, 0xE0, // Usage Minimum (224)
 	0x29, 0xE7, // Usage Maximum (231)
@@ -132,18 +142,11 @@ static const uint8_t hid_report_descriptor[] =
 	0x75, 0x01, // Report Size (1)
 	0x95, 0x08, // Report Count (8)
 	0x81, 0x02, // Input (Data, Variable, Absolute)
+
 	0x95, 0x01, // Report Count (1)
 	0x75, 0x08, // Report Size (8)
 	0x81, 0x01, // Input (Constant)
-	0x95, 0x05, // Report Count (5)
-	0x75, 0x01, // Report Size (1)
-	0x05, 0x08, // Usage Page (Page# for LEDs)
-	0x19, 0x01, // Usage Minimum (1)
-	0x29, 0x05, // Usage Maximum (5)
-	0x91, 0x02, // Output (Data, Variable, Absolute)
-	0x95, 0x01, // Report Count (1)
-	0x75, 0x03, // Report Size (3)
-	0x91, 0x01, // Output (Constant)
+
 	0x95, 0x06, // Report Count (6)
 	0x75, 0x08, // Report Size (8)
 	0x15, 0x00, // Logical Minimum (0)
@@ -152,6 +155,24 @@ static const uint8_t hid_report_descriptor[] =
 	0x19, 0x00, // Usage Minimum (0)
 	0x29, 0x65, // Usage Maximum (101)
 	0x81, 0x00, // Input (Data, Array)
+
+	// The Feature report
+	0x09, 0x01, // Usage ID - vendor defined
+	0x15, 0x00, // Logical Minimum (0)
+	0x26, 0xFF, 0x00, // Logical Maximum (255)
+	0x75, 0x08, // Report Size (8 bits)
+	0x95, 0x40, // Report Count (64 fields)
+	0xB1, 0x02, // Feature (Data, Variable, Absolute)
+
+//0x95, 0x05, // Report Count (5)
+//0x75, 0x01, // Report Size (1)
+//0x05, 0x08, // Usage Page (Page# for LEDs)
+//0x19, 0x01, // Usage Minimum (1)
+//0x29, 0x05, // Usage Maximum (5)
+//0x91, 0x02, // Output (Data, Variable, Absolute)
+//0x95, 0x01, // Report Count (1)
+//0x75, 0x03, // Report Size (3)
+//0x91, 0x01, // Output (Constant)
 	0xC0, // End Collection
 };
 
@@ -177,12 +198,40 @@ static const UsbEndpointDesc usb_hid_ep_descriptor =
 	.bInterval = 10, /* resolution in ms */
 };
 
+static const UsbInterfaceDesc usb_custom_interface_descriptor =
+{
+	.bLength = sizeof(usb_custom_interface_descriptor),
+	.bDescriptorType = USB_DT_INTERFACE,
+	.bInterfaceNumber = 1,
+	.bAlternateSetting = 0,
+	.bNumEndpoints = 1,
+	.bInterfaceClass = USB_CLASS_HID,
+	.bInterfaceSubClass = USB_INTERFACE_SUBCLASS_BOOT,
+	.bInterfaceProtocol = USB_INTERFACE_PROTOCOL_KEYBOARD,
+	.iInterface = 0,
+};
+
+static const UsbEndpointDesc usb_custom_hid_ep_descriptor =
+{
+	.bLength = sizeof(usb_custom_hid_ep_descriptor),
+	.bDescriptorType = USB_DT_ENDPOINT,
+	.bEndpointAddress = USB_CUSTOM_HID_REPORT_EP,
+	.bmAttributes = USB_ENDPOINT_XFER_INT,
+	.wMaxPacketSize = usb_cpu_to_le16((uint16_t)4),
+	.bInterval = 255, /* resolution in ms */
+};
+
 static const UsbDescHeader *usb_hid_config[] =
 {
 	(const UsbDescHeader *)&usb_hid_config_descriptor,
 	(const UsbDescHeader *)&usb_hid_interface_descriptor,
 	(const UsbDescHeader *)&usb_hid_descriptor,
 	(const UsbDescHeader *)&usb_hid_ep_descriptor,
+
+	(const UsbDescHeader *)&usb_custom_interface_descriptor,
+	(const UsbDescHeader *)&usb_hid_descriptor,
+	(const UsbDescHeader *)&usb_custom_hid_ep_descriptor,
+
 	NULL,
 };
 
@@ -202,56 +251,75 @@ static const UsbStringDesc *usb_hid_strings[] =
 };
 
 static uint8_t report[8];
-static uint8_t tmp_buf[64];
 
-#define GEN_CLASS_ID     0x01 //Generic Desktop Controls
+static volatile size_t report_len;
+static Event usb_hid_report_read_event;
+static Event usb_hid_report_write_event;
 
-static bool hid_keyboard_configured;
-
-typedef struct USBKbdCtx {
-	uint16_t id;
-	uint8_t is_reply;
-	struct CustomData *data;
-	FeatureReport_t call;
-} USBKbdCtx;
-
-static int hid_call_registered;
-static USBKbdCtx hid_call_table[CONFIG_USBHID_MAX_CALLBACK];
-static UsbBootCtx *local_ctx;
-
-void usbkb_initCallbackCtx(UsbBootCtx *ctx)
+ssize_t usbkbd_featureRead(void *buffer, size_t size, int timeout)
 {
-	ASSERT(ctx);
-	local_ctx = ctx;
+	size_t len;
+
+	if (timeout < 0)
+		event_wait(&usb_hid_report_read_event);
+	else
+		if (!event_waitTimeout(&usb_hid_report_read_event,
+					ms_to_ticks(timeout)))
+			return 0;
+
+	len = report_len;
+	if (len > size)
+		len = size;
+	len = usb_endpointReadTimeout(USB_DIR_OUT | 0, buffer, len, timeout);
+	LOG_INFO("%s: recv %d bytes\n", __func__, len);
+
+	return len;
 }
 
-static USBKbdCtx *usbkdb_searchCallback(uint8_t id, uint8_t is_reply)
+ssize_t usbkbd_featureWrite(const void *buffer, size_t size, int timeout)
 {
-	LOG_INFO("Search cmd[%x] isReply[%d]\n", id, is_reply);
-	for (int i = 0; i < CONFIG_USBHID_MAX_CALLBACK; i++)
+	if (timeout  < 0)
+		event_wait(&usb_hid_report_write_event);
+	else
+		if (!event_waitTimeout(&usb_hid_report_write_event,
+					ms_to_ticks(timeout)))
+			return 0;
+	LOG_INFO("%s: send %d bytes\n", __func__, size);
+	return usb_endpointWriteTimeout(USB_DIR_IN | 0, buffer, size, timeout);
+}
+
+static void handle_report_request(uint8_t req, uint16_t value, uint16_t length)
+{
+	switch (value >> 8)
 	{
-		if (id == hid_call_table[i].id && is_reply == hid_call_table[i].is_reply)
-		{
-			return &hid_call_table[i];
-		}
+		case HID_REPORT_INPUT:
+			LOG_INFO("HID_REPORT_INPUT\n");
+			break;
+		case HID_REPORT_OUTPUT:
+			LOG_INFO("HID_REPORT_OUTPUT\n");
+			break;
+		case HID_REPORT_FEATURE:
+			LOG_INFO("HID_REPORT_FEATURE: %u %u %u\n", req, value, length);
+			switch (req)
+			{
+				case HID_REQ_SET_REPORT:
+					if (length > 0)
+					{
+						report_len = length;
+						event_do(&usb_hid_report_read_event);
+						LOG_INFO("HID_SET_FEATURE: event_do\n");
+					}
+					break;
+				case HID_REQ_GET_REPORT:
+					event_do(&usb_hid_report_write_event);
+					LOG_INFO("HID_GET_FEATURE: event_do\n");
+					break;
+			}
+			break;
+		default:
+			LOG_INFO("unknown HID_REPORT request\n");
+			break;
 	}
-	return NULL;
-}
-
-void usbkbd_registerCallback(FeatureReport_t call, uint8_t id, uint8_t is_reply)
-{
-	ASSERT2(hid_call_registered <= CONFIG_USBHID_MAX_CALLBACK, "Max number of callback registered.\n");
-
-	hid_call_table[hid_call_registered].id = id;
-	hid_call_table[hid_call_registered].is_reply = is_reply;
-	hid_call_table[hid_call_registered].call = call;
-	hid_call_registered++;
-}
-
-static int send_reply_id;
-void usbkbd_registerCallbackReply(uint8_t id)
-{
-	send_reply_id = id;
 }
 
 static void usb_hid_event_cb(UsbCtrlRequest *ctrl)
@@ -261,7 +329,6 @@ static void usb_hid_event_cb(UsbCtrlRequest *ctrl)
 	uint16_t length = usb_le16_to_cpu(ctrl->wLength);
 	uint8_t type = ctrl->mRequestType;
 	uint8_t request = ctrl->bRequest;
-	ssize_t len  = 0;
 
 	LOG_INFO("%s: s 0x%02x 0x%02x 0x%04x 0x%04x 0x%04x\n",
 			__func__, type, request, value, index, length);
@@ -281,7 +348,6 @@ static void usb_hid_event_cb(UsbCtrlRequest *ctrl)
 					usb_endpointWrite(USB_DIR_IN | 0,
 							&hid_report_descriptor,
 							sizeof(hid_report_descriptor));
-					hid_keyboard_configured = true;
 					break;
 				default:
 					LOG_INFO("%s: unknown HID request\n", __func__);
@@ -289,48 +355,13 @@ static void usb_hid_event_cb(UsbCtrlRequest *ctrl)
 			}
 			break;
 		case HID_REQ_GET_REPORT:
-			LOG_ERR("%s: HID_REQ_GET_REPORT\n", __func__);
-			usb_endpointWrite(USB_DIR_IN | 0, NULL, 0);
-
-			if (send_reply_id)
-			{
-				USBKbdCtx *item = usbkdb_searchCallback(send_reply_id, true);
-				LOG_INFO("Call Reply report callback[%x]\n", send_reply_id);
-				if (item)
-				{
-					len = item->call(local_ctx, (uint8_t *)tmp_buf, sizeof(tmp_buf));
-					usb_endpointWrite(USB_DIR_IN | 0, tmp_buf, len);
-					LOG_INFO("Sent[%d]\n", len);
-				}
-				send_reply_id = 0;
-			}
-			else
-			{
-				LOG_ERR("Replpy empty message..\n");
-				memset(tmp_buf, 0, sizeof(tmp_buf));
-				tmp_buf[0] = 0x1;
-				tmp_buf[1] = 0xff;
-				usb_endpointWrite(USB_DIR_IN | 0, tmp_buf, sizeof(tmp_buf));
-			}
-
+			LOG_INFO("%s: HID_REQ_GET_REPORT: \n", __func__);
+			handle_report_request(HID_REQ_GET_REPORT, value, length);
 			break;
 		case HID_REQ_SET_REPORT:
-			LOG_INFO("%s: HID_REQ_SET_REPORT\n", __func__);
-			len = usb_endpointRead(USB_DIR_OUT | 0, (uint8_t *)tmp_buf, length);
-			len = usb_endpointRead(USB_DIR_OUT | 0, (uint8_t *)tmp_buf, length);
+			LOG_INFO("%s: HID_REQ_SET_REPORT: \n", __func__);
+			handle_report_request(HID_REQ_SET_REPORT, value, length);
 			usb_endpointWrite(USB_DIR_IN | 0, NULL, 0);
-			LOG_ERR("Read len [%d]\n", len);
-			if (len > 2)
-			{
-				LOG_ERRB(kdump((uint8_t *)tmp_buf, len));
-				if (tmp_buf[0] == GEN_CLASS_ID)
-				{
-					USBKbdCtx *item = usbkdb_searchCallback(tmp_buf[1], false);
-					LOG_INFO("Call report callback[%x]\n", tmp_buf[1]);
-					if (item)
-						item->call(local_ctx, (uint8_t *)tmp_buf, len);
-				}
-			}
 			break;
 		case HID_REQ_GET_IDLE:
 			LOG_INFO("%s: HID_REQ_GET_IDLE\n", __func__);
@@ -381,6 +412,11 @@ void usbkbd_sendEvent(UsbKbdEvent * event)
 	usb_endpointWrite(USB_HID_REPORT_EP, &report, sizeof(report));
 }
 
+void usbkbd_eventRegister(void)
+{
+	event_initGeneric(&usb_hid_report_read_event);
+	event_initGeneric(&usb_hid_report_write_event);
+}
 
 /*
  * Initialize a USB HID keyboard device.
@@ -393,7 +429,5 @@ int usbkbd_init(UNUSED_ARG(int, unit))
 	MOD_CHECK(proc);
 #endif
 	usb_keyboard_hw_init();
-	while (!hid_keyboard_configured)
-		cpu_relax();
 	return 0;
 }
