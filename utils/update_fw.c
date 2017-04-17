@@ -58,7 +58,7 @@
 
 #define PAYLOAD_LEN             64
 
-#define USB_FEATURE_MSGLEN     (64 - (sizeof(uint32_t) + \
+#define MSG_PAYLOAD_LEN     (64 - (sizeof(uint32_t) + \
                                  2*sizeof(uint8_t)))
 
 typedef struct __attribute__((packed)) UsbFeatureMsg
@@ -66,7 +66,7 @@ typedef struct __attribute__((packed)) UsbFeatureMsg
 	uint8_t cmd;
 	uint8_t status;
 	uint32_t len;
-	uint8_t data[USB_FEATURE_MSGLEN];
+	uint8_t data[MSG_PAYLOAD_LEN];
 } UsbFeatureMsg;
 
 static int sendRecv_msg(hid_device *handle, UsbFeatureMsg *msg, uint8_t cmd, uint8_t *data, uint32_t len)
@@ -103,7 +103,7 @@ static int sendRecv_msg(hid_device *handle, UsbFeatureMsg *msg, uint8_t cmd, uin
 
 static UsbFeatureMsg msg;
 static uint32_t crc_fw = 0;
-static uint8_t buff[USB_FEATURE_MSGLEN];
+static uint8_t buff[MSG_PAYLOAD_LEN];
 
 int main(int argc, char* argv[])
 {
@@ -158,12 +158,12 @@ int main(int argc, char* argv[])
 	}
 	hid_free_enumeration(devs);
 
-	printf("Get status..%lu %lu\n", USB_FEATURE_MSGLEN, sizeof(UsbFeatureMsg));
+	printf("Get status..%lu %lu\n", MSG_PAYLOAD_LEN, sizeof(UsbFeatureMsg));
 	int ret = 0;
-	memset(buff, 0xCC, USB_FEATURE_MSGLEN);
+	memset(buff, 0xCC, MSG_PAYLOAD_LEN);
 	for (int i = 0; i < 3; i++)
 	{
-		ret = sendRecv_msg(handle, &msg, FEAT_STATUS, buff, USB_FEATURE_MSGLEN);
+		ret = sendRecv_msg(handle, &msg, FEAT_STATUS, buff, MSG_PAYLOAD_LEN);
 		if (ret < 0)
 			continue;
 	}
@@ -183,18 +183,47 @@ int main(int argc, char* argv[])
 		printf("%s\n", argv[1]);
 		printf("%d\n", ferror(fw));
 
+		int ret = 0;
+		size_t total = 0;
+		size_t index = 0;
 		while (1)
 		{
 			if (feof(fw))
 				break;
 
-			size_t len = fread(buff, 1, PAYLOAD_LEN, fw);
+			size_t len = fread(buff, 1, MSG_PAYLOAD_LEN, fw);
+			unsigned send_ok = 0;
+			int retry = 0;
+			do {
+				ret = sendRecv_msg(handle, &msg, FEAT_WRITE, buff, len);
+				if (ret < 0)
+					continue;
+				else
+				{
+					if (msg.len == sizeof("ok") && !strcmp((char *)msg.data, "ok"))
+					{
+						printf("Write [%s]\n", msg.data);
+						send_ok = 1;
+					}
+				}
+
+				if (retry > 2)
+				{
+					printf("Unable to send msg..[%d]\n", retry);
+					goto error;
+				}
+				retry++;
+			} while (!send_ok);
+			index++;
+			total += len;
+
+			printf("Sent[%zu] bytes[%zu]\n", index, total);
 			crc_fw = crc32(buff, len, crc_fw);
 		}
 
 		printf("%zd\n", crc_fw);
+	error:
 		fclose(fw);
-
 	}
 
 
