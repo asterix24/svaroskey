@@ -143,7 +143,7 @@ static void init(void)
 	kblock_trim(&internal_flash.blk, TRIM_START, internal_flash.blk.blk_cnt - TRIM_START);
 	kfileblock_init(&flash, &internal_flash.blk);
 
-	usbfeature_init(&usb_feature_ctx, &usb_feature_msg, &flash.fd);
+	usbfeature_init(&usb_feature_ctx, &usb_feature_msg, &flash.fd, FEAT_ST_SAFE);
 
 	/* Initialize the USB keyboard device */
 	/* if (boot_mbr->key == BOOTKEY)
@@ -174,20 +174,17 @@ static void NORETURN feature_proc(void)
 	/* Periodically scan the keyboard */
 	while (1)
 	{
-		ssize_t len = usbkbd_featureRead(tmp, sizeof(tmp), 100);
+		memset(usb_feature_ctx.msg, 0x0, sizeof(UsbFeatureMsg));
+		ssize_t len = usbkbd_featureRead(usb_feature_ctx.msg, sizeof(UsbFeatureMsg), 100);
 		if (len > 0)
 		{
-			kdump(tmp, sizeof(tmp));
-			memcpy(usb_feature_ctx.msg, tmp, sizeof(UsbFeatureMsg));
-
+			// TODO verificare CRC16 del messaggio..
+			kdump(usb_feature_ctx.msg, sizeof(UsbFeatureMsg));
 			FeatureReport_t call = usbfeature_searchCallback(usb_feature_ctx.msg->cmd);
 
-			int ret = 0;
 			if (call)
 			{
-				ret = call(&usb_feature_ctx);
-
-				if (ret < 0)
+				if (call(&usb_feature_ctx) < 0)
 				{
 					usb_feature_ctx.msg->cmd = FEAT_ERR;
 					memset(usb_feature_ctx.msg->data, 0x0, sizeof(usb_feature_ctx.msg->data));
