@@ -26,11 +26,11 @@
  * invalidate any other reasons why the executable file might be covered by
  * the GNU General Public License.
  *
- * Copyright 2017 Develer S.r.l. (http://www.develer.com/)
+ * Copyright 2017 Daniele Basile <asterix24@gmail.com>
  *
  * -->
  *
- * \author Daniele Basile <asterix@develer.com>
+ * \author Daniele Basile <asterix24@gmail.com>
  *
  * \brief report hid usb feature interface.
  */
@@ -38,15 +38,18 @@
 #ifndef USBFEATURE_H
 #define USBFEATURE_H
 
-#include <drv/usbkbd.h>
 #include <io/kfile.h>
 
 #define FEAT_ERR             0xFF
-#define FEAT_NONE            0x0
-#define FEAT_ECHO            0x1
-#define FEAT_INITBOOT        0x2
+#define FEAT_STATUS          0x0
+#define FEAT_NONE            0x1
+#define FEAT_ECHO            0x2
 #define FEAT_WRITE           0x3
+#define FEAT_FWUP_ST         0x4
 #define FEAT_RESET           0x17
+
+#define FEAT_ST_APP         0
+#define FEAT_ST_SAFE        1
 
 #define BOOTKEY              0x1317
 #define BOOT_SAFEMODE        0x1
@@ -55,20 +58,23 @@
 #define BOOT_REPLY_ERR       2
 
 #define USB_FEATURE_MSGLEN     (64 - (sizeof(uint32_t) + \
-                                 2*sizeof(uint16_t)))
+                                 2*sizeof(uint8_t)))
 
-typedef struct UsbFeatureMsg
+typedef struct __attribute__((packed)) UsbFeatureMsg
 {
-	uint16_t cmd;
-	uint16_t crc;
+	uint8_t cmd;
+	uint8_t status;
 	uint32_t len;
 	uint8_t data[USB_FEATURE_MSGLEN];
 } UsbFeatureMsg;
 
-typedef struct UsbFeatureCtx
+STATIC_ASSERT(sizeof(UsbFeatureMsg) == 64);
+
+typedef struct __attribute__((packed)) UsbFeatureCtx
 {
 	KFile *fd;
-	uint16_t flag;
+	uint8_t status;
+	uint32_t crc;
 	uint16_t fw_index;
 	uint32_t fw_lenght;
 	UsbFeatureMsg *msg;
@@ -78,7 +84,7 @@ typedef struct UsbFeatureCtx
 typedef int (*FeatureReport_t)(UsbFeatureCtx *ctx);
 
 /* Commands */
-void usbfeature_init(UsbFeatureCtx *ctx, UsbFeatureMsg *msg, KFile *fd);
+void usbfeature_init(UsbFeatureCtx *ctx, UsbFeatureMsg *msg, KFile *fd, uint8_t status);
 FeatureReport_t usbfeature_searchCallback(uint8_t id);
 
 #endif /* USBFEATURE_H */

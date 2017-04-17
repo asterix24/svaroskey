@@ -55,59 +55,8 @@
 #include <string.h>
 #include <stdio.h>
 
-#if 0
-int usbfeature_write(UsbBootCtx *ctx, void *buff, size_t len)
+typedef struct UsbFeatureTable
 {
-	ASSERT(buff);
-	ASSERT(local_fd);
-
-	uint8_t *_buf = (uint8_t *)buff;
-	memcpy(&usb_boot_payload, _buf, sizeof(UsbBootPayload));
-	size_t ret = kfile_write(local_fd, usb_boot_payload.data, usb_boot_payload.len);
-
-	usb_boot_reply.cmd = USBL_WRITE;
-	usb_boot_reply.report_id = 0x1;
-
-	if (ret != usb_boot_payload.len)
-	{
-		usb_boot_reply.status = BOOT_REPLY_ERR;
-		usb_boot_reply.index = usb_boot_ctx.index;
-	}
-	else
-	{
-		usb_boot_reply.status = BOOT_REPLY_OK;
-		usb_boot_reply.index = usb_boot_ctx.index++;
-	}
-
-	usbkbd_registerCallbackReply(USBL_REPLY);
-
-	LOG_INFO("Write Flash..len[%u] ret[%u], reply registered\n", len, ret);
-	return 0;
-}
-
-int usbfeature_initBoot(UsbBootCtx *ctx, void *buff, size_t len)
-{
-	ASSERT(buff);
-	ASSERT(local_fd);
-
-	(void)data;
-	(void)len;
-	uint8_t *_buf = (uint8_t *)buff;
-	memcpy(&usb_boot_payload, _buf, sizeof(UsbBootPayload));
-
-	usb_boot_reply.cmd = USBL_INITBOOT;
-	usb_boot_reply.report_id = 0x1;
-	usb_boot_reply.index = 0;
-	usb_boot_reply.status = BOOT_REPLY_OK;
-
-	usbkbd_registerCallbackReply(USBL_REPLY);
-	LOG_INFO("Init Boot..\n");
-	return 0;
-}
-
-#endif
-
-typedef struct UsbFeatureTable {
 	uint16_t id;
 	FeatureReport_t call;
 } UsbFeatureTable;
@@ -134,6 +83,51 @@ static int usbfeature_echo(UsbFeatureCtx *ctx)
 	return 0;
 }
 
+#define WR_OK   0
+#define WR_ERR  1
+
+static int usbfeature_write(UsbFeatureCtx *ctx)
+{
+	ASSERT(ctx);
+
+#if 0
+	size_t len = kfile_write(ctx->fd, ctx->msg->data, ctx->msg->len);
+	struct WriteReply wr;
+
+	if (len > 0)
+	{
+		ctx->fw_index += 1;
+		ctx->msg->status = WR_OK;
+	} else
+	{
+		ctx->msg->status = WR_ERR;
+	}
+	
+	ctx->msg->fw_index;
+
+	memcpy(ctx->msg->data, &wr, sizeof(struct WriteReply));
+#endif
+
+	LOG_INFO("WRITE[%d].. len[%ld]\n", ctx->msg->cmd, ctx->msg->len);
+	return 0;
+}
+
+struct StartFw
+{
+	uint32_t crc;
+	uint32_t len;
+};
+
+static int usbfeature_status(UsbFeatureCtx *ctx)
+{
+	ASSERT(ctx);
+	LOG_INFO("Status [%d].. len[%ld]\n", ctx->msg->cmd, ctx->msg->len);
+	ctx->msg->status = ctx->status;
+	ctx->msg->len = 0;
+	memset(ctx->msg->data, 0x0, USB_FEATURE_MSGLEN);
+		
+	return 0;
+}
 
 static int usbfeature_reset(UsbFeatureCtx *ctx)
 {
@@ -152,10 +146,12 @@ static int usbfeature_reset(UsbFeatureCtx *ctx)
 
 static const UsbFeatureTable feature_cmd_table[] =
 {
-	{ FEAT_NONE,    usbfeature_none  },
-	{ FEAT_ECHO,    usbfeature_echo  },
-	{ FEAT_RESET,   usbfeature_reset },
-	{ 0,            NULL             }
+	{ FEAT_NONE,     usbfeature_none     },
+	{ FEAT_STATUS,   usbfeature_status   },
+	{ FEAT_ECHO,     usbfeature_echo     },
+	{ FEAT_WRITE,    usbfeature_write    },
+	{ FEAT_RESET,    usbfeature_reset    },
+	{ 0,             NULL                }
 };
 
 FeatureReport_t usbfeature_searchCallback(uint8_t id)
@@ -172,7 +168,7 @@ FeatureReport_t usbfeature_searchCallback(uint8_t id)
 	return NULL;
 }
 
-void usbfeature_init(UsbFeatureCtx *ctx, UsbFeatureMsg *msg, KFile *fd)
+void usbfeature_init(UsbFeatureCtx *ctx, UsbFeatureMsg *msg, KFile *fd, uint8_t status)
 {
 	ASSERT(fd);
 	ASSERT(ctx);
@@ -183,5 +179,6 @@ void usbfeature_init(UsbFeatureCtx *ctx, UsbFeatureMsg *msg, KFile *fd)
 
 	ctx->msg = msg;
 	ctx->fd = fd;
+	ctx->status = status;
 }
 
