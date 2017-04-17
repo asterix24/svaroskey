@@ -83,32 +83,23 @@ static int usbfeature_echo(UsbFeatureCtx *ctx)
 	return 0;
 }
 
-#define WR_OK   0
-#define WR_ERR  1
-
 static int usbfeature_write(UsbFeatureCtx *ctx)
 {
 	ASSERT(ctx);
-
-#if 0
 	size_t len = kfile_write(ctx->fd, ctx->msg->data, ctx->msg->len);
-	struct WriteReply wr;
-
+	memset(ctx->msg->data, 0x0, USB_FEATURE_MSGLEN);
 	if (len > 0)
 	{
-		ctx->fw_index += 1;
-		ctx->msg->status = WR_OK;
-	} else
-	{
-		ctx->msg->status = WR_ERR;
+		sprintf((char *)ctx->msg->data, "ok");
+		ctx->msg->len = sizeof("ok");
 	}
-	
-	ctx->msg->fw_index;
+	else
+	{
+		sprintf((char *)ctx->msg->data, "Fail!");
+		ctx->msg->len = sizeof("Fail!");
+	}
 
-	memcpy(ctx->msg->data, &wr, sizeof(struct WriteReply));
-#endif
-
-	LOG_INFO("WRITE[%d].. len[%ld]\n", ctx->msg->cmd, ctx->msg->len);
+	LOG_INFO("WRITE[%d].. len[%ld] wrote[%u]\n", ctx->msg->cmd, ctx->msg->len, len);
 	return 0;
 }
 
