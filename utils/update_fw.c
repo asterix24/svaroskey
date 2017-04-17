@@ -1,29 +1,126 @@
-#ifdef WIN32
-	#include <windows.h>
-#endif
+
+/**
+ * \file
+ * <!--
+ * This file is part of Svaroskey.
+ *
+ * Svaroskey is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+ *
+ * As a special exception, you may use this file as part of a free software
+ * library without restriction.  Specifically, if other files instantiate
+ * templates or use macros or inline functions from this file, or you compile
+ * this file and link it with other files to produce an executable, this
+ * file does not by itself cause the resulting executable to be covered by
+ * the GNU General Public License.  This exception does not however
+ * invalidate any other reasons why the executable file might be covered by
+ * the GNU General Public License.
+ *
+ * Copyright 2017 Daniele Basile <asterix24@gmail.com>
+ *
+ * -->
+ *
+ * \author Daniele Basile <asterix24@gmail.com>
+ *
+ * \brief hid utils
+ */
+
+#include "crc32.h"
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
 #include <hidapi.h>
+
 #include <string.h>
 
-#define MAX_STR 255
-#define USB_BOOT_MSGLEN     (64 - (sizeof(uint32_t) + \
-			2*sizeof(uint16_t)))
+#define FEAT_ERR             0xFF
+#define FEAT_STATUS          0x0
+#define FEAT_NONE            0x1
+#define FEAT_ECHO            0x2
+#define FEAT_WRITE           0x3
+#define FEAT_FWUP_ST         0x4
+#define FEAT_RESET           0x17
 
-typedef struct __attribute__((packed)) UsbBootMsg
+#define FEAT_ST_APP         0
+#define FEAT_ST_SAFE        1
+
+#define PAYLOAD_LEN             64
+
+#define USB_FEATURE_MSGLEN     (64 - (sizeof(uint32_t) + \
+                                 2*sizeof(uint8_t)))
+
+typedef struct __attribute__((packed)) UsbFeatureMsg
 {
-	uint16_t cmd;
-	uint16_t crc;
+	uint8_t cmd;
+	uint8_t status;
 	uint32_t len;
-	uint8_t data[USB_BOOT_MSGLEN];
-} UsbBootMsg;
+	uint8_t data[USB_FEATURE_MSGLEN];
+} UsbFeatureMsg;
+
+static int sendRecv_msg(hid_device *handle, UsbFeatureMsg *msg, uint8_t cmd, uint8_t *data, uint32_t len)
+{
+	msg->cmd = cmd;
+	msg->status = 0;
+	msg->len = len;
+	memcpy(msg->data, data, len);
+
+	uint8_t tmp[65];
+	memset(tmp, 0x0, 65);
+	memcpy(&tmp[1], msg, 64);
+
+	int ret = hid_send_feature_report(handle, tmp, sizeof(tmp));
+	if (ret < 0)
+	{
+		printf("Error: [%ls]\n", hid_error(handle));
+		return -1;
+	}
+
+	memset(msg, 0x0, sizeof(UsbFeatureMsg));
+	memset(tmp, 0x0, 65);
+	ret = hid_get_feature_report(handle, tmp, 64);
+	if (ret < 0)
+	{
+		printf("Error: [%ls]\n", hid_error(handle));
+		return -1;
+	}
+
+	memcpy(msg, tmp, 64);
+
+	return 0;
+}
+
+static UsbFeatureMsg msg;
+static uint32_t crc_fw = 0;
+static uint8_t buff[USB_FEATURE_MSGLEN];
 
 int main(int argc, char* argv[])
 {
-	hid_device *handle;
+	printf("%lu\n", sizeof(UsbFeatureMsg));
+	if (argc < 2)
+	{
+		printf("You should specify firmware file.");
+		return -1;
+	}
 
+	if (!argv[1])
+	{
+		printf("File error.");
+		return -1;
+	}
+
+	hid_device *handle;
 	// Initialize the hidapi library
 	if (hid_init())
 	{
@@ -46,13 +143,14 @@ int main(int argc, char* argv[])
 			printf("  Release:      %hx\n", cur_dev->release_number);
 			printf("  Interface:    %d\n",  cur_dev->interface_number);
 			printf("\n");
+
 			// Open the device using the VID, PID,
 			// and optionally the Serial number.
 			handle = hid_open_path(cur_dev->path);
 			if (!handle)
 			{
 				printf("Invalid VID or PID");
-				return 1;
+				return -1;
 			}
 			break;
 		}
@@ -60,49 +158,47 @@ int main(int argc, char* argv[])
 	}
 	hid_free_enumeration(devs);
 
-	printf("Send reports..\n");
-
-	UsbBootMsg msg;
-	UsbBootMsg check_msg;
-
-	printf("sizeof %ld macro %ld\n", sizeof(UsbBootMsg), USB_BOOT_MSGLEN);
-	memset(&msg, 0, sizeof(msg));
-	memset(&check_msg, 0, sizeof(check_msg));
-
-	msg.cmd = 0x1;
-	msg.crc = 0x1317;
-	msg.len = 64;
-
-	for (int i = 0; i < 10; i++)
+	printf("Get status..%lu %lu\n", USB_FEATURE_MSGLEN, sizeof(UsbFeatureMsg));
+	int ret = 0;
+	memset(buff, 0xCC, USB_FEATURE_MSGLEN);
+	for (int i = 0; i < 3; i++)
 	{
-		msg.data[0] = i;
-		int ret = hid_send_feature_report(handle, (const unsigned char *)&msg, sizeof(msg));
+		ret = sendRecv_msg(handle, &msg, FEAT_STATUS, buff, USB_FEATURE_MSGLEN);
 		if (ret < 0)
-			printf("Error: [%ls]\n", hid_error(handle));
-		else
-			printf("ok...round[%d]\n", i);
-
-		ret = hid_get_feature_report(handle, (unsigned char *)&check_msg, sizeof(UsbBootMsg));
-		if (ret < 0)
-			printf("Error: [%ls]\n", hid_error(handle));
-		else
-		{
-			printf("Read len[%d]:\n", ret);
-			printf("cmd     [%d]:\n", check_msg.cmd);
-			printf("crc     [%d]:\n", check_msg.crc);
-			printf("len     [%d]:\n", check_msg.len);
-
-			//printf("data [%s]\n", check_msg.data);
-			printf("data    [\n");
-			for(size_t i = 0; i < USB_BOOT_MSGLEN; i++)
-				printf("%0x ", check_msg.data[i]);
-			printf("       ]\n");
-
-			if (!memcmp(&msg, &check_msg, sizeof(UsbBootMsg)))
-				printf("Sync Ok!\n");
-
-		}
+			continue;
 	}
+
+	if (ret < 0)
+	{
+		printf("Unable to get status\n");
+		return -1;
+	}
+
+	if (msg.status == FEAT_ST_SAFE)
+	{
+		printf("Status is SAFE MODE [%d]\n", msg.status);
+		printf("Start to uploard fw..\n");
+
+		FILE *fw = fopen(argv[1], "r");
+		printf("%s\n", argv[1]);
+		printf("%d\n", ferror(fw));
+
+		while (1)
+		{
+			if (feof(fw))
+				break;
+
+			size_t len = fread(buff, 1, PAYLOAD_LEN, fw);
+			crc_fw = crc32(buff, len, crc_fw);
+		}
+
+		printf("%zd\n", crc_fw);
+		fclose(fw);
+
+	}
+
+
 	return 0;
 }
+
 

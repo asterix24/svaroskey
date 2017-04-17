@@ -1,6 +1,6 @@
 TARGET= flash
 LIBS= -l hidapi
-INCLUDE= -I /usr/local/include/hidapi/ -I ./
+INCLUDE= -I /usr/local/include/hidapi/ -I ./ -I ../firmware/svaroskey/common/
 CFLAGS= -g -Wall -std=c99
 CC= gcc
 
@@ -9,8 +9,13 @@ CC= gcc
 default: $(TARGET)
 all: default
 
-OBJECTS = $(patsubst %.c, %.o, $(wildcard *.c))
+SRC = $(wildcard *.c)
 HEADERS = $(wildcard *.h)
+
+#SRC = 
+#HEADER =
+
+OBJECTS = $(patsubst %.c, %.o, $(SRC))
 
 %.o: %.c $(HEADERS)
 	$(CC) $(CFLAGS) $(INCLUDE) -c $< -o $@
