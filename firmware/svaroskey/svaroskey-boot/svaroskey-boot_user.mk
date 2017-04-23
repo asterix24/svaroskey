@@ -11,6 +11,7 @@ svaroskey-boot_PROGRAMMER_PORT = none
 svaroskey-boot_USER_CSRC = \
 	$(svaroskey-boot_SRC_PATH)/main.c \
 	common/usbfeature.c \
+	common/crc32.c \
 	#
 
 # Files included by the user.
