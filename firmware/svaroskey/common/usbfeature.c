@@ -36,6 +36,7 @@
  */
 
 #include "usbfeature.h"
+#include "crc32.h"
 
 #include <cfg/debug.h>
 #define LOG_LEVEL  3
@@ -83,23 +84,69 @@ static int usbfeature_echo(UsbFeatureCtx *ctx)
 	return 0;
 }
 
+struct WrStatus
+{
+	uint8_t status;
+	uint32_t blk_index;
+	uint32_t wrote_len;
+};
+
+#define FEAT_ST_WRITE_OK 0
+#define FEAT_ST_WRITE_ERR 1
+
 static int usbfeature_write(UsbFeatureCtx *ctx)
 {
 	ASSERT(ctx);
 	size_t len = kfile_write(ctx->fd, ctx->msg->data, ctx->msg->len);
 	memset(ctx->msg->data, 0x0, USB_FEATURE_MSGLEN);
+
+	// Read written block to compute crc
+	kfile_seek(ctx->fd, -len, KSM_SEEK_CUR);
+	kfile_read(ctx->fd, ctx->msg->data, len);
+	ctx->crc = crc32(ctx->msg->data, len, ctx->crc);
+
+	struct WrStatus wr;
 	if (len > 0)
 	{
-		sprintf((char *)ctx->msg->data, "ok");
-		ctx->msg->len = sizeof("ok");
+		ctx->fw_index++;
+		ctx->fw_lenght += len;
+
+		wr.status = FEAT_ST_WRITE_OK;
 	}
 	else
 	{
-		sprintf((char *)ctx->msg->data, "Fail!");
-		ctx->msg->len = sizeof("Fail!");
+		wr.status = FEAT_ST_WRITE_ERR;
+		LOG_ERR("Error while write block\n");
 	}
 
+	wr.wrote_len = ctx->fw_lenght;
+	wr.blk_index = ctx->fw_index;
+
+	memcpy(ctx->msg->data, &wr, sizeof(struct WrStatus));
+	ctx->msg->len = sizeof(struct WrStatus);
+
 	LOG_INFO("WRITE[%d].. len[%ld] wrote[%u]\n", ctx->msg->cmd, ctx->msg->len, len);
+	return 0;
+}
+
+static int usbfeature_checkWrite(UsbFeatureCtx *ctx)
+{
+	uint32_t crc;
+	memcpy(&crc, ctx->msg->data, ctx->msg->len);
+	LOG_INFO("CRC[%ld] Idx[%d] len[%ld]\n", crc, ctx->fw_index, ctx->fw_lenght);
+
+	ctx->msg->data[0] = 1;
+	ctx->msg->len = 1;
+	if (crc == ctx->crc)
+	{
+		LOG_INFO("Write OK! set flag for next boot\n");
+		// TODO: ..
+		// aggioranre mbr
+		ctx->msg->data[0] = 0;
+		ctx->msg->len = 1;
+	}
+
+	LOG_INFO("CHECK WRITE[%d].. len[%ld]\n", ctx->msg->cmd, ctx->msg->len);
 	return 0;
 }
 
@@ -112,11 +159,11 @@ struct StartFw
 static int usbfeature_status(UsbFeatureCtx *ctx)
 {
 	ASSERT(ctx);
-	LOG_INFO("Status [%d].. len[%ld]\n", ctx->msg->cmd, ctx->msg->len);
-	ctx->msg->status = ctx->status;
-	ctx->msg->len = 0;
 	memset(ctx->msg->data, 0x0, USB_FEATURE_MSGLEN);
-		
+	memcpy(ctx->msg->data, (uint8_t *)&ctx->status, sizeof(ctx->status));
+	ctx->msg->len = sizeof(ctx->status);
+	LOG_INFO("STATUS reply[%d]..len[%ld]\n", ctx->status, ctx->msg->len);
+
 	return 0;
 }
 
@@ -141,6 +188,7 @@ static const UsbFeatureTable feature_cmd_table[] =
 	{ FEAT_STATUS,   usbfeature_status   },
 	{ FEAT_ECHO,     usbfeature_echo     },
 	{ FEAT_WRITE,    usbfeature_write    },
+	{ FEAT_CHK_WRITE, usbfeature_checkWrite    },
 	{ FEAT_RESET,    usbfeature_reset    },
 	{ 0,             NULL                }
 };
@@ -159,7 +207,7 @@ FeatureReport_t usbfeature_searchCallback(uint8_t id)
 	return NULL;
 }
 
-void usbfeature_init(UsbFeatureCtx *ctx, UsbFeatureMsg *msg, KFile *fd, uint8_t status)
+void usbfeature_init(UsbFeatureCtx *ctx, UsbFeatureMsg *msg, KFile *fd)
 {
 	ASSERT(fd);
 	ASSERT(ctx);
@@ -170,6 +218,5 @@ void usbfeature_init(UsbFeatureCtx *ctx, UsbFeatureMsg *msg, KFile *fd, uint8_t 
 
 	ctx->msg = msg;
 	ctx->fd = fd;
-	ctx->status = status;
 }
 

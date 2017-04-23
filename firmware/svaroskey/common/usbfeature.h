@@ -38,6 +38,7 @@
 #ifndef USBFEATURE_H
 #define USBFEATURE_H
 
+#include "cfg/cfg_usb.h"
 #include <io/kfile.h>
 
 #define FEAT_ERR             0xFF
@@ -45,7 +46,7 @@
 #define FEAT_NONE            0x1
 #define FEAT_ECHO            0x2
 #define FEAT_WRITE           0x3
-#define FEAT_FWUP_ST         0x4
+#define FEAT_CHK_WRITE       0x4
 #define FEAT_RESET           0x17
 
 #define FEAT_ST_APP         0
@@ -54,21 +55,18 @@
 #define BOOTKEY              0x1317
 #define BOOT_SAFEMODE        0x1
 
-#define BOOT_REPLY_OK        1
-#define BOOT_REPLY_ERR       2
-
-#define USB_FEATURE_MSGLEN     (64 - (sizeof(uint32_t) + \
-                                 2*sizeof(uint8_t)))
+#define USB_FEATURE_MSGLEN     (CONFIG_USB_BUFSIZE - \
+                                 (sizeof(uint32_t) + \
+                                  sizeof(uint8_t)))
 
 typedef struct __attribute__((packed)) UsbFeatureMsg
 {
 	uint8_t cmd;
-	uint8_t status;
 	uint32_t len;
 	uint8_t data[USB_FEATURE_MSGLEN];
 } UsbFeatureMsg;
 
-STATIC_ASSERT(sizeof(UsbFeatureMsg) == 64);
+STATIC_ASSERT(sizeof(UsbFeatureMsg) == CONFIG_USB_BUFSIZE);
 
 typedef struct __attribute__((packed)) UsbFeatureCtx
 {
@@ -84,7 +82,12 @@ typedef struct __attribute__((packed)) UsbFeatureCtx
 typedef int (*FeatureReport_t)(UsbFeatureCtx *ctx);
 
 /* Commands */
-void usbfeature_init(UsbFeatureCtx *ctx, UsbFeatureMsg *msg, KFile *fd, uint8_t status);
+INLINE void usbfeature_setStatus(UsbFeatureCtx *ctx, uint8_t status)
+{
+	ctx->status = status;
+}
+
+void usbfeature_init(UsbFeatureCtx *ctx, UsbFeatureMsg *msg, KFile *fd);
 FeatureReport_t usbfeature_searchCallback(uint8_t id);
 
 #endif /* USBFEATURE_H */
