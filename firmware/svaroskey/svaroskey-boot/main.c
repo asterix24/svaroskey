@@ -179,7 +179,7 @@ static void NORETURN feature_proc(void)
 	while (1)
 	{
 		memset(usb_feature_ctx.msg, 0x0, sizeof(UsbFeatureMsg));
-		ssize_t len = usbkbd_featureRead(usb_feature_ctx.msg, sizeof(UsbFeatureMsg), 50);
+		ssize_t len = usbkbd_featureRead(usb_feature_ctx.msg, sizeof(UsbFeatureMsg), -1);
 		if (len > 0)
 		{
 			FeatureReport_t call = usbfeature_searchCallback(usb_feature_ctx.msg->cmd);
@@ -197,13 +197,12 @@ static void NORETURN feature_proc(void)
 					LOG_ERR("Feature Callback, fail! [%d]\n", ret);
 				}
 
-				usbkbd_featureWrite(usb_feature_ctx.msg, sizeof(UsbFeatureMsg), 100);
+				usbkbd_featureWrite(usb_feature_ctx.msg, sizeof(UsbFeatureMsg), 50);
 				LOG_INFO("Feature Write cmd[%d] len[%u]\n", \
 						usb_feature_ctx.msg->cmd, sizeof(UsbFeatureMsg));
 				memset(usb_feature_ctx.msg, 0x0, sizeof(UsbFeatureMsg));
 			}
 		}
-		timer_delay(100);
 	}
 }
 

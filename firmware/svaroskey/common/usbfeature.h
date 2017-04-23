@@ -78,7 +78,6 @@ typedef struct __attribute__((packed)) UsbFeatureCtx
 	UsbFeatureMsg *msg;
 } UsbFeatureCtx;
 
-
 typedef int (*FeatureReport_t)(UsbFeatureCtx *ctx);
 
 /* Commands */
