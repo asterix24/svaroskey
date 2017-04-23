@@ -58,6 +58,10 @@
 #include "hw/hw_boot.h"
 
 #include <cfg/debug.h>
+#define LOG_LEVEL  3
+#define LOG_FORMAT 0
+
+#include <cfg/log.h>
 
 #include <common/usbfeature.h>
 
@@ -143,7 +147,8 @@ static void init(void)
 	kblock_trim(&internal_flash.blk, TRIM_START, internal_flash.blk.blk_cnt - TRIM_START);
 	kfileblock_init(&flash, &internal_flash.blk);
 
-	usbfeature_init(&usb_feature_ctx, &usb_feature_msg, &flash.fd, FEAT_ST_SAFE);
+	usbfeature_init(&usb_feature_ctx, &usb_feature_msg, &flash.fd);
+	usbfeature_setStatus(&usb_feature_ctx, FEAT_ST_SAFE);
 
 	/* Initialize the USB keyboard device */
 	/* if (boot_mbr->key == BOOTKEY)
@@ -168,35 +173,36 @@ static void init(void)
 	usbkbd_init(0);
 }
 
-static uint8_t tmp[64];
 static void NORETURN feature_proc(void)
 {
 	/* Periodically scan the keyboard */
 	while (1)
 	{
 		memset(usb_feature_ctx.msg, 0x0, sizeof(UsbFeatureMsg));
-		ssize_t len = usbkbd_featureRead(usb_feature_ctx.msg, sizeof(UsbFeatureMsg), 100);
+		ssize_t len = usbkbd_featureRead(usb_feature_ctx.msg, sizeof(UsbFeatureMsg), 50);
 		if (len > 0)
 		{
-			// TODO verificare CRC16 del messaggio..
-			kdump(usb_feature_ctx.msg, sizeof(UsbFeatureMsg));
 			FeatureReport_t call = usbfeature_searchCallback(usb_feature_ctx.msg->cmd);
 
 			if (call)
 			{
-				if (call(&usb_feature_ctx) < 0)
+				int ret = 0;
+				if ((ret = call(&usb_feature_ctx)) < 0)
 				{
 					usb_feature_ctx.msg->cmd = FEAT_ERR;
 					memset(usb_feature_ctx.msg->data, 0x0, sizeof(usb_feature_ctx.msg->data));
 					sprintf((char *)usb_feature_ctx.msg->data, "Cmd Fail!");
 					usb_feature_ctx.msg->len = sizeof("Cmd Fail!");
+
+					LOG_ERR("Feature Callback, fail! [%d]\n", ret);
 				}
 
 				usbkbd_featureWrite(usb_feature_ctx.msg, sizeof(UsbFeatureMsg), 100);
+				LOG_INFO("Feature Write cmd[%d] len[%u]\n", \
+						usb_feature_ctx.msg->cmd, sizeof(UsbFeatureMsg));
 				memset(usb_feature_ctx.msg, 0x0, sizeof(UsbFeatureMsg));
 			}
 		}
-
 		timer_delay(100);
 	}
 }
