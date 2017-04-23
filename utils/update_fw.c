@@ -50,55 +50,98 @@
 #define FEAT_NONE            0x1
 #define FEAT_ECHO            0x2
 #define FEAT_WRITE           0x3
-#define FEAT_FWUP_ST         0x4
+#define FEAT_CHK_WRITE       0x4
 #define FEAT_RESET           0x17
 
 #define FEAT_ST_APP         0
 #define FEAT_ST_SAFE        1
 
-#define PAYLOAD_LEN             64
-
-#define MSG_PAYLOAD_LEN     (64 - (sizeof(uint32_t) + \
-                                 2*sizeof(uint8_t)))
+#define PAYLOAD_LEN         64
+#define MSG_PAYLOAD_LEN     (PAYLOAD_LEN - \
+                            (sizeof(uint32_t) + \
+                             sizeof(uint8_t)))
 
 typedef struct __attribute__((packed)) UsbFeatureMsg
 {
 	uint8_t cmd;
-	uint8_t status;
 	uint32_t len;
 	uint8_t data[MSG_PAYLOAD_LEN];
 } UsbFeatureMsg;
 
+#define FEAT_ST_WRITE_OK 0
+#define FEAT_ST_WRITE_ERR 1
+
+struct WrStatus
+{
+	uint8_t status;
+	uint32_t blk_index;
+	uint32_t wrote_len;
+};
+
 static int sendRecv_msg(hid_device *handle, UsbFeatureMsg *msg, uint8_t cmd, uint8_t *data, uint32_t len)
 {
 	msg->cmd = cmd;
-	msg->status = 0;
 	msg->len = len;
 	memcpy(msg->data, data, len);
 
-	uint8_t tmp[65];
-	memset(tmp, 0x0, 65);
-	memcpy(&tmp[1], msg, 64);
+	uint8_t tmp[PAYLOAD_LEN + 1];
+	memset(tmp, 0x0, PAYLOAD_LEN + 1);
+	memcpy(&tmp[1], msg, PAYLOAD_LEN);
 
 	int ret = hid_send_feature_report(handle, tmp, sizeof(tmp));
+	printf("send [%d] %ld\n", PAYLOAD_LEN, sizeof(tmp));
 	if (ret < 0)
 	{
-		printf("Error: [%ls]\n", hid_error(handle));
+		printf("Send Error: [%ls]\n", hid_error(handle));
 		return -1;
 	}
 
 	memset(msg, 0x0, sizeof(UsbFeatureMsg));
-	memset(tmp, 0x0, 65);
-	ret = hid_get_feature_report(handle, tmp, 64);
+	memset(tmp, 0x0, PAYLOAD_LEN + 1);
+	ret = hid_get_feature_report(handle, tmp, PAYLOAD_LEN);
 	if (ret < 0)
 	{
-		printf("Error: [%ls]\n", hid_error(handle));
+		printf("Get Error: [%ls]\n", hid_error(handle));
 		return -1;
 	}
 
-	memcpy(msg, tmp, 64);
+	memcpy(msg, tmp, PAYLOAD_LEN);
 
 	return 0;
+}
+
+static int hid_status(hid_device *handle, UsbFeatureMsg *msg)
+{
+	uint8_t buff[MSG_PAYLOAD_LEN];
+	for (int i = 0; i < 3; i++)
+	{
+		int ret = sendRecv_msg(handle, msg, FEAT_STATUS, buff, MSG_PAYLOAD_LEN);
+		if (ret < 0)
+			continue;
+
+		if (msg->len > 0)
+			return msg->data[0];
+	}
+
+	return -1;
+}
+
+static int hid_check(hid_device *handle, UsbFeatureMsg *msg, uint32_t crc32)
+{
+	uint8_t buff[MSG_PAYLOAD_LEN];
+	memset(buff, 0x0, MSG_PAYLOAD_LEN);
+	memcpy(buff, &crc32, sizeof(crc32));
+
+	for (int i = 0; i < 3; i++)
+	{
+		int ret = sendRecv_msg(handle, msg, FEAT_CHK_WRITE, buff, sizeof(crc32));
+		if (ret < 0)
+			continue;
+
+		return msg->data[0];
+	}
+
+	return -1;
 }
 
 static UsbFeatureMsg msg;
@@ -120,7 +163,7 @@ int main(int argc, char* argv[])
 		return -1;
 	}
 
-	hid_device *handle;
+	hid_device *handle = NULL;
 	// Initialize the hidapi library
 	if (hid_init())
 	{
@@ -159,24 +202,17 @@ int main(int argc, char* argv[])
 	hid_free_enumeration(devs);
 
 	printf("Get status..%lu %lu\n", MSG_PAYLOAD_LEN, sizeof(UsbFeatureMsg));
-	int ret = 0;
 	memset(buff, 0xCC, MSG_PAYLOAD_LEN);
-	for (int i = 0; i < 3; i++)
-	{
-		ret = sendRecv_msg(handle, &msg, FEAT_STATUS, buff, MSG_PAYLOAD_LEN);
-		if (ret < 0)
-			continue;
-	}
-
-	if (ret < 0)
+	int status = hid_status(handle, &msg);
+	if (status < 0)
 	{
 		printf("Unable to get status\n");
 		return -1;
 	}
 
-	if (msg.status == FEAT_ST_SAFE)
+	if (status == FEAT_ST_SAFE)
 	{
-		printf("Status is SAFE MODE [%d]\n", msg.status);
+		printf("Status is SAFE MODE [%d]\n", status);
 		printf("Start to uploard fw..\n");
 
 		FILE *fw = fopen(argv[1], "r");
@@ -195,38 +231,51 @@ int main(int argc, char* argv[])
 			unsigned send_ok = 0;
 			int retry = 0;
 			do {
-				ret = sendRecv_msg(handle, &msg, FEAT_WRITE, buff, len);
-				if (ret < 0)
-					continue;
-				else
-				{
-					if (msg.len == sizeof("ok") && !strcmp((char *)msg.data, "ok"))
-					{
-						printf("Write [%s]\n", msg.data);
-						send_ok = 1;
-					}
-				}
-
 				if (retry > 2)
 				{
-					printf("Unable to send msg..[%d]\n", retry);
+					printf("Unable to send msg max retry[%d]..exit\n", retry);
 					goto error;
 				}
 				retry++;
+
+				ret = sendRecv_msg(handle, &msg, FEAT_WRITE, buff, len);
+				if (ret < 0)
+				{
+					printf("Error while send data block ret[%d]\n", ret);
+					continue;
+				}
+				else
+				{
+					if (msg.len > 0)
+					{
+						struct WrStatus wr;
+						memcpy(&wr, msg.data, msg.len);
+						if (wr.status == FEAT_ST_WRITE_OK)
+						{
+							printf("Write index[%d] len[%d]\n", wr.blk_index, wr.wrote_len);
+							send_ok = 1;
+						}
+						else
+							printf("Write error..[%d]\n", wr.status);
+					}
+				}
 			} while (!send_ok);
+
 			index++;
 			total += len;
 
-			printf("Sent[%zu] bytes[%zu]\n", index, total);
 			crc_fw = crc32(buff, len, crc_fw);
+			printf("Sent[%zu] bytes[%zu]\n", index, total);
+
 		}
 
-		printf("%zd\n", crc_fw);
+		printf("Sent[%zu] bytes[%zu] crc[%u]\n", index, total, crc_fw);
+		ret = hid_check(handle, &msg, crc_fw);
+		if (ret > 0)
+			printf("Write check fail!..\n");
 	error:
 		fclose(fw);
 	}
-
-
 	return 0;
 }
 
