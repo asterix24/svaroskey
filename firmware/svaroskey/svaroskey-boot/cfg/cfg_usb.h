@@ -44,7 +44,7 @@
  * $WIZ$ type = "enum"
  * $WIZ$ value_list = "log_level"
  */
-#define USB_LOG_LEVEL      LOG_LVL_INFO
+#define USB_LOG_LEVEL      LOG_LVL_WARN
 
 /**
  * module logging format.
