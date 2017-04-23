@@ -144,6 +144,11 @@ static int usbfeature_checkWrite(UsbFeatureCtx *ctx)
 		// aggioranre mbr
 		ctx->msg->data[0] = 0;
 		ctx->msg->len = 1;
+
+		//Clean up the current ctx status
+		ctx->fw_index = 0;
+		ctx->fw_lenght = 0;
+		ctx->crc = 0;
 	}
 
 	LOG_INFO("CHECK WRITE[%d].. len[%ld]\n", ctx->msg->cmd, ctx->msg->len);
@@ -184,13 +189,13 @@ static int usbfeature_reset(UsbFeatureCtx *ctx)
 
 static const UsbFeatureTable feature_cmd_table[] =
 {
-	{ FEAT_NONE,     usbfeature_none     },
-	{ FEAT_STATUS,   usbfeature_status   },
-	{ FEAT_ECHO,     usbfeature_echo     },
-	{ FEAT_WRITE,    usbfeature_write    },
-	{ FEAT_CHK_WRITE, usbfeature_checkWrite    },
-	{ FEAT_RESET,    usbfeature_reset    },
-	{ 0,             NULL                }
+	{ FEAT_NONE,      usbfeature_none       },
+	{ FEAT_STATUS,    usbfeature_status     },
+	{ FEAT_ECHO,      usbfeature_echo       },
+	{ FEAT_WRITE,     usbfeature_write      },
+	{ FEAT_CHK_WRITE, usbfeature_checkWrite },
+	{ FEAT_RESET,     usbfeature_reset      },
+	{ 0,              NULL                  }
 };
 
 FeatureReport_t usbfeature_searchCallback(uint8_t id)
