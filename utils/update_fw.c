@@ -128,13 +128,9 @@ static int hid_status(hid_device *handle, UsbFeatureMsg *msg)
 
 static int hid_check(hid_device *handle, UsbFeatureMsg *msg, uint32_t crc32)
 {
-	uint8_t buff[MSG_PAYLOAD_LEN];
-	memset(buff, 0x0, MSG_PAYLOAD_LEN);
-	memcpy(buff, &crc32, sizeof(crc32));
-
 	for (int i = 0; i < 3; i++)
 	{
-		int ret = sendRecv_msg(handle, msg, FEAT_CHK_WRITE, buff, sizeof(crc32));
+		int ret = sendRecv_msg(handle, msg, FEAT_CHK_WRITE, (unsigned char *)&crc32, sizeof(crc32));
 		if (ret < 0)
 			continue;
 
@@ -252,7 +248,7 @@ int main(int argc, char* argv[])
 						memcpy(&wr, msg.data, msg.len);
 						if (wr.status == FEAT_ST_WRITE_OK)
 						{
-							printf("Write index[%d] len[%d]\n", wr.blk_index, wr.wrote_len);
+							printf("Wrote index[%d] len[%d]\n", wr.blk_index, wr.wrote_len);
 							send_ok = 1;
 						}
 						else
@@ -273,6 +269,15 @@ int main(int argc, char* argv[])
 		ret = hid_check(handle, &msg, crc_fw);
 		if (ret > 0)
 			printf("Write check fail!..\n");
+		else
+		{
+			printf("\n");
+			printf("Firmware wrote update correctly!\n");
+			printf("File name: %s\n", argv[1]);
+			printf("Wrote size: %zu\n", total);
+			printf("Blk num: %zu\n", index);
+			printf("crc32: %u\n", crc_fw);
+		}
 	error:
 		fclose(fw);
 	}
