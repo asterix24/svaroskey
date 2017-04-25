@@ -40,9 +40,28 @@
 
 #include <io/cm3.h>
 
+typedef struct BootMBR
+{
+	uint32_t key;
+	uint32_t mode;
+	uint32_t len;
+	uint32_t crc;
+} BootMBR;
+
+#define BOOTKEY              0xDEADBEEF
+#define BOOT_SAFEMODE        0
+#define BOOT_APPMODE         1
+#define BOOT_MBR_TABLE_OFF   sizeof(BootMBR)
+
+
 #define FLASH_BOOT_SIZE  (64 * 1024)
-#define TRIM_START (FLASH_BOOT_SIZE / FLASH_PAGE_SIZE)
-#define MAX_FIRMWARE_SIZE ((F_SIZE * 1024) - FLASH_BOOT_SIZE)
-#define MIN_FIRMWARE_SIZE 8192
+#define BOOT_PAGE_SIZE   (FLASH_PAGE_SIZE)
+#define TRIM_START       (FLASH_BOOT_SIZE / FLASH_PAGE_SIZE)
+
+void (*rom_start)(void) NORETURN;
+#define START_APP() rom_start()
+
+// load traget address from reset vector (4 bytes offset, BootMBR)
+#define JUMP_APP_ADDR  (FLASH_BOOT_SIZE + 4 + sizeof(BootMBR) + 1)
 
 #endif /*  HW_BOOT_H */

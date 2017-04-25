@@ -64,6 +64,7 @@
 #include <cfg/log.h>
 
 #include <common/usbfeature.h>
+#include <common/crc32.h>
 
 #include <cpu/irq.h>
 #include <cpu/power.h>
@@ -89,22 +90,14 @@
 #define NUM_LED_COLS   8
 #define NUM_LEDS       (NUM_LED_COLS * NUM_LED_ROWS)
 
-void (*rom_start)(void) NORETURN;
-#define START_APP() rom_start()
-
-typedef struct BootMBR
-{
-	uint16_t key;
-	uint16_t mode;
-	uint32_t crc;
-} BootMBR;
+// Boot table to store fw crc and boot mode see hw_boot.h
+static BootMBR boot_mbr;
 
 static Sipo sipo;
 static Flash internal_flash;
 static KFileBlock flash;
 static UsbFeatureCtx usb_feature_ctx;
 static UsbFeatureMsg usb_feature_msg;
-static BootMBR *boot_mbr;
 static uint8_t leds_off[3]  = {0x00, 0x00, 0x00};
 
 static void hw_init(void)
@@ -141,35 +134,72 @@ static void init(void)
 	sipo_init(&sipo, 0, SIPO_DATAORDER_LSB);
 	kfile_write(&sipo.fd, leds_off, sizeof(leds_off));
 
+
+	/* Internal Flash init */
 	flash_init(&internal_flash, FLASH_WRITE_ONCE);
-	// trim flash to avoid problems with kfile_block
-	kprintf("Trim start: %d, blocks: %ld\n", TRIM_START, internal_flash.blk.blk_cnt - TRIM_START);
+
+	/*
+	 * Trim flash to avoid problems with kfile_block
+	 *
+	 * We resever te fisrt block for the bootloader firmware tail,
+	 * and to place the mbr.
+	 *
+	 * The MBR is placed at the end of bootloader section.
+	 */
+	LOG_INFO("Trim start: %d, blocks: %ld\n", TRIM_START, internal_flash.blk.blk_cnt - TRIM_START);
 	kblock_trim(&internal_flash.blk, TRIM_START, internal_flash.blk.blk_cnt - TRIM_START);
 	kfileblock_init(&flash, &internal_flash.blk);
 
-	usbfeature_init(&usb_feature_ctx, &usb_feature_msg, &flash.fd);
-	usbfeature_setStatus(&usb_feature_ctx, FEAT_ST_SAFE);
 
-	/* Initialize the USB keyboard device */
-	/* if (boot_mbr->key == BOOTKEY)
+	// Read MBR Table.
+	LOG_INFO("Try to read MBR..[%x]\n", BOOTKEY);
+	kfile_read(&flash.fd, &boot_mbr, sizeof(BootMBR));
+
+
+	if (boot_mbr.key == BOOTKEY)
 	{
-		//TODO: check crc32
+		LOG_INFO("MBR Found!\n");
+		LOG_INFO("\tkey     [0x%x]\n", boot_mbr.key);
+		LOG_INFO("\tFW Mode [%ld]\n", boot_mbr.mode);
+		LOG_INFO("\tFW len  [%ld]\n", boot_mbr.len);
+		LOG_INFO("\tFW CRC  [%ld]\n", boot_mbr.crc);
 
-		if (boot_mbr->mode != BOOT_SAFEMODE)
+		LOG_INFO("Check crc.\n");
+		size_t fw_len = boot_mbr.len;
+		uint32_t crc = 0;
+		uint8_t tmp[64];
+		do
 		{
-			// Ok boot to app.
+			size_t len = kfile_read(&flash.fd, tmp, MIN(fw_len, sizeof(tmp)));
+			crc = crc32(tmp, len, crc);
+			fw_len -= len;
+		} while(fw_len);
 
-			// load traget address from reset vector (4 bytes offset, 8 bytes length + CRC)
-			rom_start = *(void **)(FLASH_BOOT_SIZE + 4 + sizeof(BootMBR));
-			kprintf("Jump to main application, address 0x%p\n", rom_start);
+		LOG_INFO("Computed CRC[%ld]\n", crc);
+		kfile_seek(&flash.fd, sizeof(BootMBR), KSM_SEEK_SET);
+
+
+		if ((crc == boot_mbr.crc) && (boot_mbr.mode == BOOT_APPMODE))
+		{
+			//Ok, fw is good jump to it.
+			rom_start = *(void **)(JUMP_APP_ADDR);
+			LOG_INFO("Jump to main application, address 0x%p\n", rom_start);
 			//	timer_cleanup();
 			IRQ_DISABLE;
 			START_APP();
 		}
 
-	} */
+		LOG_INFO("App Fw is incosistent, so remaing in SAFE mode.\n");
+	}
 
-	usbkbd_eventRegister();
+	LOG_INFO("Boot in SAFE MODE\n");
+
+	/* init usb feature to run custom cmd. */
+	usbfeature_init(&usb_feature_ctx, &usb_feature_msg, &flash.fd);
+	usbfeature_setStatus(&usb_feature_ctx, FEAT_ST_SAFE);
+
+	/* Initialize the USB keyboard device */
+	usbkbd_eventRegister(); // For custom feature
 	usbkbd_init(0);
 }
 
@@ -191,7 +221,7 @@ static void NORETURN feature_proc(void)
 				{
 					usb_feature_ctx.msg->cmd = FEAT_ERR;
 					memset(usb_feature_ctx.msg->data, 0x0, sizeof(usb_feature_ctx.msg->data));
-					sprintf((char *)usb_feature_ctx.msg->data, "Cmd Fail!");
+					memcpy(usb_feature_ctx.msg->data, "Cmd Fail!", sizeof("Cmd Fail!"));
 					usb_feature_ctx.msg->len = sizeof("Cmd Fail!");
 
 					LOG_ERR("Feature Callback, fail! [%d]\n", ret);
