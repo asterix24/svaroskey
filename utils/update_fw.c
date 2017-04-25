@@ -56,6 +56,9 @@
 #define FEAT_ST_APP         0
 #define FEAT_ST_SAFE        1
 
+#define NO_REPLY            0
+#define WAIT_REPLY          1
+
 #define PAYLOAD_LEN         64
 #define MSG_PAYLOAD_LEN     (PAYLOAD_LEN - \
                             (sizeof(uint32_t) + \
@@ -78,11 +81,14 @@ struct WrStatus
 	uint32_t wrote_len;
 };
 
-static int sendRecv_msg(hid_device *handle, UsbFeatureMsg *msg, uint8_t cmd, uint8_t *data, uint32_t len)
+static int sendRecv_msg(hid_device *handle, UsbFeatureMsg *msg, \
+		uint8_t cmd, uint8_t *data, uint32_t len, uint8_t reply)
 {
 	msg->cmd = cmd;
 	msg->len = len;
-	memcpy(msg->data, data, len);
+
+	if (data)
+		memcpy(msg->data, data, len);
 
 	uint8_t tmp[PAYLOAD_LEN + 1];
 	memset(tmp, 0x0, PAYLOAD_LEN + 1);
@@ -95,6 +101,9 @@ static int sendRecv_msg(hid_device *handle, UsbFeatureMsg *msg, uint8_t cmd, uin
 		printf("Send Error: [%ls]\n", hid_error(handle));
 		return -1;
 	}
+
+	if (!reply)
+		return 0;
 
 	memset(msg, 0x0, sizeof(UsbFeatureMsg));
 	memset(tmp, 0x0, PAYLOAD_LEN + 1);
@@ -115,7 +124,7 @@ static int hid_status(hid_device *handle, UsbFeatureMsg *msg)
 	uint8_t buff[MSG_PAYLOAD_LEN];
 	for (int i = 0; i < 3; i++)
 	{
-		int ret = sendRecv_msg(handle, msg, FEAT_STATUS, buff, MSG_PAYLOAD_LEN);
+		int ret = sendRecv_msg(handle, msg, FEAT_STATUS, buff, MSG_PAYLOAD_LEN, WAIT_REPLY);
 		if (ret < 0)
 			continue;
 
@@ -126,14 +135,21 @@ static int hid_status(hid_device *handle, UsbFeatureMsg *msg)
 	return -1;
 }
 
+static int hid_reset(hid_device *handle, UsbFeatureMsg *msg)
+{
+	return sendRecv_msg(handle, msg, FEAT_RESET, NULL, 0, NO_REPLY);
+}
+
 static int hid_check(hid_device *handle, UsbFeatureMsg *msg, uint32_t crc32)
 {
 	for (int i = 0; i < 3; i++)
 	{
-		int ret = sendRecv_msg(handle, msg, FEAT_CHK_WRITE, (unsigned char *)&crc32, sizeof(crc32));
+		int ret = sendRecv_msg(handle, msg, FEAT_CHK_WRITE, \
+				(unsigned char *)&crc32, sizeof(crc32), WAIT_REPLY);
 		if (ret < 0)
 			continue;
 
+		printf("%s", &msg->data[1]);
 		return msg->data[0];
 	}
 
@@ -234,7 +250,7 @@ int main(int argc, char* argv[])
 				}
 				retry++;
 
-				ret = sendRecv_msg(handle, &msg, FEAT_WRITE, buff, len);
+				ret = sendRecv_msg(handle, &msg, FEAT_WRITE, buff, len, WAIT_REPLY);
 				if (ret < 0)
 				{
 					printf("Error while send data block ret[%d]\n", ret);
@@ -277,6 +293,9 @@ int main(int argc, char* argv[])
 			printf("Wrote size: %zu\n", total);
 			printf("Blk num: %zu\n", index);
 			printf("crc32: %u\n", crc_fw);
+
+			printf("Reset board..\n");
+			hid_reset(handle, &msg);
 		}
 	error:
 		fclose(fw);
