@@ -52,9 +52,14 @@
 #define FEAT_ST_APP         0
 #define FEAT_ST_SAFE        1
 
+#define FEAT_REPLY_OK        0
+#define FEAT_REPLY_ERR       1
+#define FEAT_REPLY_CRC_ERR   2
+#define FEAT_REPLY_MBR_ERR   3
+
 #define USB_FEATURE_MSGLEN     (CONFIG_USB_BUFSIZE - \
-                                 (sizeof(uint32_t) + \
-                                  sizeof(uint8_t)))
+		(sizeof(uint32_t) + \
+		 sizeof(uint8_t)))
 
 typedef struct __attribute__((packed)) UsbFeatureMsg
 {
@@ -83,8 +88,10 @@ INLINE void usbfeature_setStatus(UsbFeatureCtx *ctx, uint8_t status)
 	ctx->status = status;
 }
 
-void usbfeature_init(UsbFeatureCtx *ctx, UsbFeatureMsg *msg, KFile *fd);
 FeatureReport_t usbfeature_searchCallback(uint8_t id);
+void usbfeature_poll(UsbFeatureCtx *ctx);
+
+void usbfeature_init(UsbFeatureCtx *ctx, UsbFeatureMsg *msg, KFile *fd);
 
 #endif /* USBFEATURE_H */
 

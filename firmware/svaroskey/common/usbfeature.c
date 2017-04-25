@@ -64,18 +64,24 @@ typedef struct UsbFeatureTable
 	FeatureReport_t call;
 } UsbFeatureTable;
 
+INLINE void make_reply(UsbFeatureMsg *msg, \
+		uint8_t st_code, const char *text, size_t len)
+{
+	ASSERT(msg);
+	msg->data[0] = st_code;
+	memcpy(&msg->data[1], text, len);
+	msg->len = 1 + len;
+}
+
 static int usbfeature_none(UsbFeatureCtx *ctx)
 {
 	ASSERT(ctx);
 	ASSERT(ctx->msg);
 	(void) *ctx;
 
-	memset(ctx->msg->data, 0x0, sizeof(ctx->msg->data));
-	sprintf((char *)ctx->msg->data, "Cmd Ok!");
-	ctx->msg->len = sizeof("Cmd Ok!");
+	make_reply(ctx->msg, FEAT_REPLY_OK, "ok!", sizeof("ok!"));
 
 	LOG_INFO("NONE[%d].. len[%ld]\n", ctx->msg->cmd, ctx->msg->len);
-
 	return 0;
 }
 
@@ -139,9 +145,9 @@ static int usbfeature_checkWrite(UsbFeatureCtx *ctx)
 
 	if (crc != ctx->crc)
 	{
-		ctx->msg->data[0] = 1;
-		memcpy(&ctx->msg->data[1], "CRC missmatch\n", sizeof("CRC missmatch\n"));
-		ctx->msg->len = 1 + sizeof("CRC missmatch\n");
+		make_reply(ctx->msg, FEAT_REPLY_CRC_ERR, \
+				"CRC missmatch!", sizeof("CRC missmatch!"));
+
 		LOG_ERR("CRC missmatch.. fw [%ld] != computed [%ld]\n", crc, ctx->crc);
 
 		goto exit;
@@ -159,19 +165,16 @@ static int usbfeature_checkWrite(UsbFeatureCtx *ctx)
 
 	if (!len)
 	{
-		LOG_ERR("");
+		make_reply(ctx->msg, FEAT_REPLY_MBR_ERR, \
+				"Unable to update MBR.", sizeof("Unable to update MBR."));
 
-		ctx->msg->data[0] = 2;
-		memcpy(&ctx->msg->data[1], "Unable to update MBR.\n", sizeof("Unable to update MBR.\n"));
-		ctx->msg->len = 1 + sizeof("Unable to update MBR.\n");
 		LOG_ERR("Unable to update MBR.\n");
 
 		goto exit;
 	}
 
-	ctx->msg->data[0] = 0;
-	memcpy(&ctx->msg->data[1], "Ok, fw updated.\n", sizeof("Ok, fw updated.\n"));
-	ctx->msg->len = 1 + sizeof("Ok, fw updated.\n");
+	make_reply(ctx->msg, FEAT_REPLY_OK, \
+			"Ok, fw updated.", sizeof("Ok, fw updated"));
 	LOG_INFO("Fw write correctly, MBR updated..\n");
 
 exit:
@@ -193,8 +196,8 @@ static int usbfeature_status(UsbFeatureCtx *ctx)
 {
 	ASSERT(ctx);
 	memset(ctx->msg->data, 0x0, USB_FEATURE_MSGLEN);
-	memcpy(ctx->msg->data, (uint8_t *)&ctx->status, sizeof(ctx->status));
-	ctx->msg->len = sizeof(ctx->status);
+	make_reply(ctx->msg, ctx->status, "Status", sizeof("Status"));
+
 	LOG_INFO("STATUS reply[%d]..len[%ld]\n", ctx->status, ctx->msg->len);
 
 	return 0;
@@ -238,6 +241,30 @@ FeatureReport_t usbfeature_searchCallback(uint8_t id)
 			return feature_cmd_table[i].call;
 	}
 	return NULL;
+}
+
+void usbfeature_poll(UsbFeatureCtx *ctx)
+{
+	memset(ctx->msg, 0x0, sizeof(UsbFeatureMsg));
+	ssize_t len = usbkbd_featureRead(ctx->msg, sizeof(UsbFeatureMsg), -1);
+	if (len > 0)
+	{
+		FeatureReport_t call = usbfeature_searchCallback(ctx->msg->cmd);
+
+		if (call)
+		{
+			int ret = 0;
+			if ((ret = call(ctx)) < 0)
+			{
+				make_reply(ctx->msg, FEAT_REPLY_ERR, "Cmd Fail!", sizeof("Cmd Fail!"));
+				LOG_ERR("Feature Callback, fail! [%d]\n", ret);
+			}
+
+			usbkbd_featureWrite(ctx->msg, sizeof(UsbFeatureMsg), 50);
+			LOG_INFO("Feature Write cmd[%d] len[%u]\n", \
+					ctx->msg->cmd, sizeof(UsbFeatureMsg));
+		}
+	}
 }
 
 void usbfeature_init(UsbFeatureCtx *ctx, UsbFeatureMsg *msg, KFile *fd)
