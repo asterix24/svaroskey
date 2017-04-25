@@ -411,7 +411,7 @@ void timer_init(void)
 }
 
 
-#if (ARCH & ARCH_EMUL) || (CPU_ARM_AT91)
+#if (ARCH & ARCH_EMUL) || (CPU_ARM_AT91) || (CPU_CM3)
 /**
  * Stop timer
  */

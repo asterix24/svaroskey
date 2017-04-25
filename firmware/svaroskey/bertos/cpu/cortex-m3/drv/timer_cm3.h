@@ -105,5 +105,6 @@
 
 void timer_hw_init(void);
 void timer_hw_exit(void);
+INLINE void timer_hw_cleanup(void) { timer_hw_exit(); }
 
 #endif /* TIMER_CM3_H */
