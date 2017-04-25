@@ -61,7 +61,6 @@ typedef struct BootMBR
 void (*rom_start)(void) NORETURN;
 #define START_APP() rom_start()
 
-// load traget address from reset vector (4 bytes offset, BootMBR)
-#define JUMP_APP_ADDR  (FLASH_BOOT_SIZE + 4 + sizeof(BootMBR) + 1)
+#define MAIN_APP_ADDRESS  (FLASH_BOOT_SIZE + 16 + 4)
 
 #endif /*  HW_BOOT_H */

@@ -150,27 +150,29 @@ static void init(void)
 	kblock_trim(&internal_flash.blk, TRIM_START, internal_flash.blk.blk_cnt - TRIM_START);
 	kfileblock_init(&flash, &internal_flash.blk);
 
+	// TODO Add boot sequence to force safe boot mode
+	// whit key combo and led blinking.
 
 	// Read MBR Table.
 	LOG_INFO("Try to read MBR..[%x]\n", BOOTKEY);
 	kfile_read(&flash.fd, &boot_mbr, sizeof(BootMBR));
 
-
 	if (boot_mbr.key == BOOTKEY)
 	{
 		LOG_INFO("MBR Found!\n");
-		LOG_INFO("\tkey     [0x%x]\n", boot_mbr.key);
+		LOG_INFO("\tkey     [0x%lx]\n", boot_mbr.key);
 		LOG_INFO("\tFW Mode [%ld]\n", boot_mbr.mode);
 		LOG_INFO("\tFW len  [%ld]\n", boot_mbr.len);
 		LOG_INFO("\tFW CRC  [%ld]\n", boot_mbr.crc);
 
 		LOG_INFO("Check crc.\n");
+		uint8_t tmp[64];
 		size_t fw_len = boot_mbr.len;
 		uint32_t crc = 0;
-		uint8_t tmp[64];
 		do
 		{
-			size_t len = kfile_read(&flash.fd, tmp, MIN(fw_len, sizeof(tmp)));
+			size_t len = kfile_read(&flash.fd, tmp,  MIN(fw_len, sizeof(tmp)));
+
 			crc = crc32(tmp, len, crc);
 			fw_len -= len;
 		} while(fw_len);
@@ -178,13 +180,13 @@ static void init(void)
 		LOG_INFO("Computed CRC[%ld]\n", crc);
 		kfile_seek(&flash.fd, sizeof(BootMBR), KSM_SEEK_SET);
 
-
 		if ((crc == boot_mbr.crc) && (boot_mbr.mode == BOOT_APPMODE))
 		{
 			//Ok, fw is good jump to it.
-			rom_start = *(void **)(JUMP_APP_ADDR);
+			// load traget address from reset vector (4 bytes offset, BootMBR)
+			rom_start = *(void **)(MAIN_APP_ADDRESS);
 			LOG_INFO("Jump to main application, address 0x%p\n", rom_start);
-			//	timer_cleanup();
+			timer_cleanup();
 			IRQ_DISABLE;
 			START_APP();
 		}
@@ -193,6 +195,7 @@ static void init(void)
 	}
 
 	LOG_INFO("Boot in SAFE MODE\n");
+
 
 	/* init usb feature to run custom cmd. */
 	usbfeature_init(&usb_feature_ctx, &usb_feature_msg, &flash.fd);
