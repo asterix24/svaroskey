@@ -52,9 +52,6 @@
 #define FEAT_ST_APP         0
 #define FEAT_ST_SAFE        1
 
-#define BOOTKEY              0x1317
-#define BOOT_SAFEMODE        0x1
-
 #define USB_FEATURE_MSGLEN     (CONFIG_USB_BUFSIZE - \
                                  (sizeof(uint32_t) + \
                                   sizeof(uint8_t)))

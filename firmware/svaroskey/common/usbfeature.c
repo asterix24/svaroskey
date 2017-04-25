@@ -38,6 +38,8 @@
 #include "usbfeature.h"
 #include "crc32.h"
 
+#include "hw/hw_boot.h"
+
 #include <cfg/debug.h>
 #define LOG_LEVEL  3
 #define LOG_FORMAT 0
@@ -131,27 +133,53 @@ static int usbfeature_write(UsbFeatureCtx *ctx)
 
 static int usbfeature_checkWrite(UsbFeatureCtx *ctx)
 {
+	LOG_INFO("CHECK WRITE[%d].. len[%ld]\n", ctx->msg->cmd, ctx->msg->len);
+
 	uint32_t crc;
 	memcpy(&crc, ctx->msg->data, ctx->msg->len);
-	LOG_INFO("CRC[%ld] Idx[%d] len[%ld]\n", crc, ctx->fw_index, ctx->fw_lenght);
 
-	ctx->msg->data[0] = 1;
-	ctx->msg->len = 1;
-	if (crc == ctx->crc)
+	if (crc != ctx->crc)
 	{
-		LOG_INFO("Write OK! set flag for next boot\n");
-		// TODO: ..
-		// aggioranre mbr
-		ctx->msg->data[0] = 0;
-		ctx->msg->len = 1;
+		ctx->msg->data[0] = 1;
+		memcpy(&ctx->msg->data[1], "CRC missmatch\n", sizeof("CRC missmatch\n"));
+		ctx->msg->len = 1 + sizeof("CRC missmatch\n");
+		LOG_ERR("CRC missmatch.. fw [%ld] != computed [%ld]\n", crc, ctx->crc);
 
-		//Clean up the current ctx status
-		ctx->fw_index = 0;
-		ctx->fw_lenght = 0;
-		ctx->crc = 0;
+		goto exit;
 	}
 
-	LOG_INFO("CHECK WRITE[%d].. len[%ld]\n", ctx->msg->cmd, ctx->msg->len);
+	BootMBR boot_mbr;
+	boot_mbr.crc = crc;
+	boot_mbr.len = ctx->fw_lenght;
+	boot_mbr.mode = BOOT_APPMODE;
+	boot_mbr.key = BOOTKEY;
+
+	kfile_seek(ctx->fd, 0, KSM_SEEK_SET);
+	size_t len = kfile_write(ctx->fd, &boot_mbr, sizeof(BootMBR));
+	kfile_flush(ctx->fd);
+
+	if (!len)
+	{
+		LOG_ERR("");
+
+		ctx->msg->data[0] = 2;
+		memcpy(&ctx->msg->data[1], "Unable to update MBR.\n", sizeof("Unable to update MBR.\n"));
+		ctx->msg->len = 1 + sizeof("Unable to update MBR.\n");
+		LOG_ERR("Unable to update MBR.\n");
+
+		goto exit;
+	}
+
+	ctx->msg->data[0] = 0;
+	memcpy(&ctx->msg->data[1], "Ok, fw updated.\n", sizeof("Ok, fw updated.\n"));
+	ctx->msg->len = 1 + sizeof("Ok, fw updated.\n");
+	LOG_INFO("Fw write correctly, MBR updated..\n");
+
+exit:
+	//Clean up the current ctx status
+	ctx->fw_index = 0;
+	ctx->fw_lenght = 0;
+	ctx->crc = 0;
 	return 0;
 }
 
