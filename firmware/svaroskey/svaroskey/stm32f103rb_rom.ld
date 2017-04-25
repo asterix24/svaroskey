@@ -47,7 +47,7 @@ STACK_SIZE = 0x1000;
  */
 MEMORY
 {
-	rom(rx) : org = 0x00010000, len = 64k
+	rom(rx) : org = 0x00010010, len = 64k
 	ram(rwx) : org = 0x20000000, len = 20k
 }
 
