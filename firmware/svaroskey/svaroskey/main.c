@@ -59,13 +59,14 @@
 #include "hw/hw_keymap.h"
 #include "hw/hw_boot.h"
 
-#include <common/usbbootloader.h>
 
 #include <cfg/debug.h>
 #define LOG_LEVEL  2
 #define LOG_FORMAT 0
 
 #include <cfg/log.h>
+
+#include <common/usbfeature.h>
 
 #include <cpu/irq.h>
 #include <cpu/power.h>
@@ -91,8 +92,10 @@ static Eeprom eep;
 static I2c i2c;
 static Flash internal_flash;
 static KFileBlock flash;
-static UsbBootCtx usb_boot_ctx;
-static UsbBootMsg usb_boot_msg;
+
+static UsbFeatureCtx usb_feature_ctx;
+static UsbFeatureMsg usb_feature_msg;
+
 static uint8_t leds_off[3]  = {0x00, 0x00, 0x00};
 
 static void hw_init(void)
@@ -135,11 +138,12 @@ static void init(void)
 	kblock_trim(&internal_flash.blk, TRIM_START, internal_flash.blk.blk_cnt - TRIM_START);
 	kfileblock_init(&flash, &internal_flash.blk);
 
-	usbbootloader_init(&usb_boot_ctx, &usb_boot_msg, &flash.fd);
+	/* init usb feature to run custom cmd. */
+	usbfeature_init(&usb_feature_ctx, &usb_feature_msg, &flash.fd);
+	usbfeature_setStatus(&usb_feature_ctx, FEAT_ST_APP);
 
 	/* Initialize the USB keyboard device */
-	//usbkbd_registerCallback(usbbootloader_write, USBL_WRITE, false);
-	usbkbd_registerCallback(usbbootloader_reset, USBL_RESET, false);
+	usbkbd_eventRegister(); // For custom feature
 	usbkbd_init(0);
 
 	/* Initialize keymap */

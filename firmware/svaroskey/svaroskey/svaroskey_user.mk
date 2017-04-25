@@ -13,7 +13,7 @@ svaroskey_USER_CSRC = \
 	$(svaroskey_SRC_PATH)/keymap.c \
 	$(svaroskey_SRC_PATH)/layouts.c \
 	$(svaroskey_SRC_PATH)/mappings.c \
-	common/usbbootloader.c \
+	common/usbfeature.c \
 	$(svaroskey_HW_PATH)/hw/hw_keymap.c \
 	#
 

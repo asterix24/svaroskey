@@ -126,7 +126,6 @@ static int usbfeature_write(UsbFeatureCtx *ctx)
 
 	memcpy(ctx->msg->data, &wr, sizeof(struct WrStatus));
 	ctx->msg->len = sizeof(struct WrStatus);
-
 	LOG_INFO("WRITE[%d].. len[%ld] wrote[%u]\n", ctx->msg->cmd, ctx->msg->len, len);
 	return 0;
 }
@@ -176,6 +175,7 @@ static int usbfeature_checkWrite(UsbFeatureCtx *ctx)
 	LOG_INFO("Fw write correctly, MBR updated..\n");
 
 exit:
+
 	//Clean up the current ctx status
 	ctx->fw_index = 0;
 	ctx->fw_lenght = 0;
