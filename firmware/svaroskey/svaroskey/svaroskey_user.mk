@@ -14,6 +14,7 @@ svaroskey_USER_CSRC = \
 	$(svaroskey_SRC_PATH)/layouts.c \
 	$(svaroskey_SRC_PATH)/mappings.c \
 	common/usbfeature.c \
+	common/crc32.c \
 	$(svaroskey_HW_PATH)/hw/hw_keymap.c \
 	#
 
