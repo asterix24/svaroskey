@@ -45,16 +45,21 @@
 
 #include <string.h>
 
-#define FEAT_ERR             0xFF
 #define FEAT_STATUS          0x0
 #define FEAT_NONE            0x1
 #define FEAT_ECHO            0x2
 #define FEAT_WRITE           0x3
 #define FEAT_CHK_WRITE       0x4
+#define FEAT_MODE            0x5
 #define FEAT_RESET           0x17
 
 #define FEAT_ST_APP         0
 #define FEAT_ST_SAFE        1
+
+#define FEAT_REPLY_OK        0
+#define FEAT_REPLY_ERR       1
+#define FEAT_REPLY_CRC_ERR   2
+#define FEAT_REPLY_MBR_ERR   3
 
 #define NO_REPLY            0
 #define WAIT_REPLY          1
@@ -140,21 +145,60 @@ static int hid_reset(hid_device *handle, UsbFeatureMsg *msg)
 	return sendRecv_msg(handle, msg, FEAT_RESET, NULL, 0, NO_REPLY);
 }
 
-static int hid_check(hid_device *handle, UsbFeatureMsg *msg, uint32_t crc32)
+struct WrCheck
+{
+	uint32_t crc;
+	uint32_t fw_index;
+	uint32_t fw_lenght;
+};
+
+static int hid_check(hid_device *handle, UsbFeatureMsg *msg, struct WrCheck *wr_check)
 {
 	for (int i = 0; i < 3; i++)
 	{
 		int ret = sendRecv_msg(handle, msg, FEAT_CHK_WRITE, \
-				(unsigned char *)&crc32, sizeof(crc32), WAIT_REPLY);
+				(unsigned char *)wr_check, sizeof(struct WrCheck), WAIT_REPLY);
 		if (ret < 0)
 			continue;
 
-		printf("%s", &msg->data[1]);
+		printf("%s\n", &msg->data[1]);
 		return msg->data[0];
 	}
 
 	return -1;
 }
+
+static int hid_writeBuff(hid_device *handle, UsbFeatureMsg *msg, uint8_t *buff, size_t len)
+{
+	for (int i = 0; i < 3; i++)
+	{
+		int ret = sendRecv_msg(handle, msg, FEAT_WRITE, \
+				(unsigned char *)buff, len, WAIT_REPLY);
+		if (ret < 0)
+			continue;
+
+		printf("%s\n", &msg->data[1]);
+		return msg->data[0];
+	}
+
+	return -1;
+}
+
+
+static int hid_none(hid_device *handle, UsbFeatureMsg *msg)
+{
+	for (int i = 0; i < 3; i++)
+	{
+		int ret = sendRecv_msg(handle, msg, FEAT_NONE, \
+				NULL, 0, WAIT_REPLY);
+		if (ret < 0)
+			continue;
+		else
+			return 0;
+	}
+	return -1;
+}
+
 
 static UsbFeatureMsg msg;
 static uint32_t crc_fw = 0;
@@ -185,6 +229,12 @@ int main(int argc, char* argv[])
 
 	struct hid_device_info *devs, *cur_dev;
 	devs = hid_enumerate(0x0, 0x0);
+	if (!devs)
+	{
+		printf("No Hid devices");
+		return -1;
+	}
+
 	cur_dev = devs;
 	while (cur_dev) {
 		if (cur_dev->vendor_id == 0x046d)
@@ -213,13 +263,42 @@ int main(int argc, char* argv[])
 	}
 	hid_free_enumeration(devs);
 
-	printf("Get status..%lu %lu\n", MSG_PAYLOAD_LEN, sizeof(UsbFeatureMsg));
-	memset(buff, 0xCC, MSG_PAYLOAD_LEN);
+
+	printf("Send some NONE cmd to wait board boot..\n");
+	if (hid_none(handle, &msg) < 0)
+	{
+		printf("Unable to talk with board\n");
+		return -1;
+	}
+	printf("Board ready!\n");
+
 	int status = hid_status(handle, &msg);
 	if (status < 0)
 	{
 		printf("Unable to get status\n");
 		return -1;
+	}
+
+	if (status == FEAT_ST_APP)
+	{
+		printf("Devise is in app mode..\n");
+		printf("Put it in SAFE mode.\n");
+		printf("Reset board..\n");
+		hid_reset(handle, &msg);
+		printf("Send some NONE cmd to wait board boot..\n");
+		if (hid_none(handle, &msg) < 0)
+		{
+			printf("Unable to talk with board\n");
+			return -1;
+		}
+		printf("Board ready!\n");
+
+		int status = hid_status(handle, &msg);
+		if (status < 0)
+		{
+			printf("Unable to get status\n");
+			return -1;
+		}
 	}
 
 	if (status == FEAT_ST_SAFE)
@@ -240,41 +319,18 @@ int main(int argc, char* argv[])
 				break;
 
 			size_t len = fread(buff, 1, MSG_PAYLOAD_LEN, fw);
-			unsigned send_ok = 0;
-			int retry = 0;
-			do {
-				if (retry > 2)
-				{
-					printf("Unable to send msg max retry[%d]..exit\n", retry);
-					goto error;
-				}
-				retry++;
-
-				ret = sendRecv_msg(handle, &msg, FEAT_WRITE, buff, len, WAIT_REPLY);
-				if (ret < 0)
-				{
-					printf("Error while send data block ret[%d]\n", ret);
-					continue;
-				}
-				else
-				{
-					if (msg.len > 0)
-					{
-						struct WrStatus wr;
-						memcpy(&wr, msg.data, msg.len);
-						if (wr.status == FEAT_ST_WRITE_OK)
-						{
-							printf("Wrote index[%d] len[%d]\n", wr.blk_index, wr.wrote_len);
-							send_ok = 1;
-						}
-						else
-							printf("Write error..[%d]\n", wr.status);
-					}
-				}
-			} while (!send_ok);
-
-			index++;
-			total += len;
+			int ret = hid_writeBuff(handle, &msg, buff, len);
+			if (ret == FEAT_REPLY_OK)
+			{
+				index++;
+				total += len;
+				printf("Wrote index[%zu] len[%zu]\n", index, total);
+			}
+			else
+			{
+				printf("Write error..\n");
+				goto error;
+			}
 
 			crc_fw = crc32(buff, len, crc_fw);
 			printf("Sent[%zu] bytes[%zu]\n", index, total);
@@ -282,7 +338,11 @@ int main(int argc, char* argv[])
 		}
 
 		printf("Sent[%zu] bytes[%zu] crc[%u]\n", index, total, crc_fw);
-		ret = hid_check(handle, &msg, crc_fw);
+		struct WrCheck wr_check;
+		wr_check.crc = crc_fw;
+		wr_check.fw_index = index;
+		wr_check.fw_lenght = total;
+		ret = hid_check(handle, &msg, &wr_check);
 		if (ret > 0)
 			printf("Write check fail!..\n");
 		else
