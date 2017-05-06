@@ -66,7 +66,7 @@
  * $WIZ$ type = "int"
  * $WIZ$ min = 1
  */
-#define CONFIG_USB_INTERFACE_MAX  1
+#define CONFIG_USB_INTERFACE_MAX  2
 
 /**
  * Maximum number of allocated endpoints (0 = auto).
@@ -80,6 +80,6 @@
  * $WIZ$ type = "int"
  * $WIZ$ min = 8
  */
-#define CONFIG_EP0_MAX_SIZE 8
+#define CONFIG_EP0_MAX_SIZE 16
 
 #endif /* CFG_USB_H */
