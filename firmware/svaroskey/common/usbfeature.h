@@ -47,19 +47,22 @@
 #define FEAT_ECHO            0x2
 #define FEAT_WRITE           0x3
 #define FEAT_CHK_WRITE       0x4
+#define FEAT_MODE            0x5
 #define FEAT_RESET           0x17
 
-#define FEAT_ST_APP         0
-#define FEAT_ST_SAFE        1
+#define FEAT_ST_APP          0
+#define FEAT_ST_SAFE         1
+#define FEAT_ST_LOCK_SAFE    0xAA
 
 #define FEAT_REPLY_OK        0
 #define FEAT_REPLY_ERR       1
 #define FEAT_REPLY_CRC_ERR   2
 #define FEAT_REPLY_MBR_ERR   3
+#define FEAT_REPLY_WR_ERR    4
 
 #define USB_FEATURE_MSGLEN     (CONFIG_USB_BUFSIZE - \
-		(sizeof(uint32_t) + \
-		 sizeof(uint8_t)))
+                                (sizeof(uint32_t) + \
+                                 sizeof(uint8_t)))
 
 typedef struct __attribute__((packed)) UsbFeatureMsg
 {
@@ -73,10 +76,9 @@ STATIC_ASSERT(sizeof(UsbFeatureMsg) == CONFIG_USB_BUFSIZE);
 typedef struct __attribute__((packed)) UsbFeatureCtx
 {
 	KFile *fd;
+	uint8_t flag;
 	uint8_t status;
 	uint32_t crc;
-	uint16_t fw_index;
-	uint32_t fw_lenght;
 	UsbFeatureMsg *msg;
 } UsbFeatureCtx;
 

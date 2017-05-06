@@ -79,6 +79,7 @@ static int usbfeature_none(UsbFeatureCtx *ctx)
 	ASSERT(ctx->msg);
 	(void) *ctx;
 
+	ctx->flag = FEAT_ST_LOCK_SAFE;
 	make_reply(ctx->msg, FEAT_REPLY_OK, "ok!", sizeof("ok!"));
 
 	LOG_INFO("NONE[%d].. len[%ld]\n", ctx->msg->cmd, ctx->msg->len);
@@ -91,106 +92,6 @@ static int usbfeature_echo(UsbFeatureCtx *ctx)
 	LOG_INFO("ECHO[%d].. len[%ld]\n", ctx->msg->cmd, ctx->msg->len);
 	return 0;
 }
-
-struct WrStatus
-{
-	uint8_t status;
-	uint32_t blk_index;
-	uint32_t wrote_len;
-};
-
-#define FEAT_ST_WRITE_OK 0
-#define FEAT_ST_WRITE_ERR 1
-
-static int usbfeature_write(UsbFeatureCtx *ctx)
-{
-	ASSERT(ctx);
-	size_t len = kfile_write(ctx->fd, ctx->msg->data, ctx->msg->len);
-	memset(ctx->msg->data, 0x0, USB_FEATURE_MSGLEN);
-
-	// Read written block to compute crc
-	kfile_seek(ctx->fd, -len, KSM_SEEK_CUR);
-	kfile_read(ctx->fd, ctx->msg->data, len);
-	ctx->crc = crc32(ctx->msg->data, len, ctx->crc);
-
-	struct WrStatus wr;
-	if (len > 0)
-	{
-		ctx->fw_index++;
-		ctx->fw_lenght += len;
-
-		wr.status = FEAT_ST_WRITE_OK;
-	}
-	else
-	{
-		wr.status = FEAT_ST_WRITE_ERR;
-		LOG_ERR("Error while write block\n");
-	}
-
-	wr.wrote_len = ctx->fw_lenght;
-	wr.blk_index = ctx->fw_index;
-
-	memcpy(ctx->msg->data, &wr, sizeof(struct WrStatus));
-	ctx->msg->len = sizeof(struct WrStatus);
-	LOG_INFO("WRITE[%d].. len[%ld] wrote[%u]\n", ctx->msg->cmd, ctx->msg->len, len);
-	return 0;
-}
-
-static int usbfeature_checkWrite(UsbFeatureCtx *ctx)
-{
-	LOG_INFO("CHECK WRITE[%d].. len[%ld]\n", ctx->msg->cmd, ctx->msg->len);
-
-	uint32_t crc;
-	memcpy(&crc, ctx->msg->data, ctx->msg->len);
-
-	if (crc != ctx->crc)
-	{
-		make_reply(ctx->msg, FEAT_REPLY_CRC_ERR, \
-				"CRC missmatch!", sizeof("CRC missmatch!"));
-
-		LOG_ERR("CRC missmatch.. fw [%ld] != computed [%ld]\n", crc, ctx->crc);
-
-		goto exit;
-	}
-
-	BootMBR boot_mbr;
-	boot_mbr.crc = crc;
-	boot_mbr.len = ctx->fw_lenght;
-	boot_mbr.mode = BOOT_APPMODE;
-	boot_mbr.key = BOOTKEY;
-
-	kfile_seek(ctx->fd, 0, KSM_SEEK_SET);
-	size_t len = kfile_write(ctx->fd, &boot_mbr, sizeof(BootMBR));
-	kfile_flush(ctx->fd);
-
-	if (!len)
-	{
-		make_reply(ctx->msg, FEAT_REPLY_MBR_ERR, \
-				"Unable to update MBR.", sizeof("Unable to update MBR."));
-
-		LOG_ERR("Unable to update MBR.\n");
-
-		goto exit;
-	}
-
-	make_reply(ctx->msg, FEAT_REPLY_OK, \
-			"Ok, fw updated.", sizeof("Ok, fw updated"));
-	LOG_INFO("Fw write correctly, MBR updated..\n");
-
-exit:
-
-	//Clean up the current ctx status
-	ctx->fw_index = 0;
-	ctx->fw_lenght = 0;
-	ctx->crc = 0;
-	return 0;
-}
-
-struct StartFw
-{
-	uint32_t crc;
-	uint32_t len;
-};
 
 static int usbfeature_status(UsbFeatureCtx *ctx)
 {
@@ -218,10 +119,91 @@ static int usbfeature_reset(UsbFeatureCtx *ctx)
 	return 0;
 }
 
-static const UsbFeatureTable feature_cmd_table[] =
+static int usbfeature_write(UsbFeatureCtx *ctx)
 {
-	{ FEAT_NONE,      usbfeature_none       },
+	ASSERT(ctx);
+	size_t len = kfile_write(ctx->fd, ctx->msg->data, ctx->msg->len);
+	memset(ctx->msg->data, 0x0, USB_FEATURE_MSGLEN);
+
+	// Read written block to compute crc
+	kfile_seek(ctx->fd, -len, KSM_SEEK_CUR);
+	kfile_read(ctx->fd, ctx->msg->data, len);
+	ctx->crc = crc32(ctx->msg->data, len, ctx->crc);
+
+	if (len > 0)
+	{
+		make_reply(ctx->msg, FEAT_REPLY_OK, "Write ok.", sizeof("Write ok."));
+	}
+	else
+	{
+		make_reply(ctx->msg, FEAT_REPLY_WR_ERR, "Write Error.", sizeof("Write Error."));
+		LOG_ERR("Error while write block\n");
+	}
+
+	LOG_INFO("WRITE[%d].. len[%ld] wrote[%u]\n", ctx->msg->cmd, ctx->msg->len, len);
+	return 0;
+}
+
+struct WrCheck
+{
+	uint32_t crc;
+	uint32_t fw_index;
+	uint32_t fw_lenght;
+};
+
+static int usbfeature_checkWrite(UsbFeatureCtx *ctx)
+{
+	LOG_INFO("CHECK WRITE[%d].. len[%ld]\n", ctx->msg->cmd, ctx->msg->len);
+
+	struct WrCheck wr_check;
+	memcpy(&wr_check, ctx->msg->data, ctx->msg->len);
+
+	if (wr_check.crc != ctx->crc)
+	{
+		make_reply(ctx->msg, FEAT_REPLY_CRC_ERR, \
+				"CRC missmatch!", sizeof("CRC missmatch!"));
+
+		LOG_ERR("CRC missmatch.. fw [%ld] != computed [%ld]\n", wr_check.crc, ctx->crc);
+
+		goto exit;
+	}
+
+	BootMBR boot_mbr;
+	boot_mbr.crc = wr_check.crc;
+	boot_mbr.len = wr_check.fw_lenght;
+	boot_mbr.mode = BOOT_APPMODE;
+	boot_mbr.key = BOOTKEY;
+
+	kfile_off_t mbr_offest = 0;
+	if (ctx->status == FEAT_ST_APP)
+		mbr_offest = FLASH_BOOT_SIZE;
+
+	kfile_seek(ctx->fd, mbr_offest, KSM_SEEK_SET);
+	size_t len = kfile_write(ctx->fd, &boot_mbr, sizeof(BootMBR));
+	kfile_flush(ctx->fd);
+
+	if (!len)
+	{
+		make_reply(ctx->msg, FEAT_REPLY_MBR_ERR, \
+				"Unable to update MBR.", sizeof("Unable to update MBR."));
+
+		LOG_ERR("Unable to update MBR.\n");
+
+		goto exit;
+	}
+
+	make_reply(ctx->msg, FEAT_REPLY_OK, \
+			"Ok, fw updated.", sizeof("Ok, fw updated"));
+	LOG_INFO("Fw write correctly, MBR updated..\n");
+
+exit:
+	ctx->crc = 0;
+	return 0;
+}
+
+static const UsbFeatureTable feature_cmd_table[] = {
 	{ FEAT_STATUS,    usbfeature_status     },
+	{ FEAT_NONE,      usbfeature_none       },
 	{ FEAT_ECHO,      usbfeature_echo       },
 	{ FEAT_WRITE,     usbfeature_write      },
 	{ FEAT_CHK_WRITE, usbfeature_checkWrite },
