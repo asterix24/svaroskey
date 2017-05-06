@@ -51,7 +51,7 @@
  * $WIZ$ type = "enum"
  * $WIZ$ value_list = "log_level"
  */
-#define USB_KEYBOARD_LOG_LEVEL      LOG_LVL_WARN
+#define USB_KEYBOARD_LOG_LEVEL      LOG_LVL_INFO
 
 /**
  * module logging format.
@@ -74,12 +74,5 @@
  * $WIZ$ type = "hex"
  */
 #define USB_KEYBOARD_PRODUCT_ID     0xffff
-
-/**
- * Define max number of callback associate to report hid commands.
- *
- * $WIZ$ type = "int"
- */
-#define CONFIG_USBHID_MAX_CALLBACK     16
 
 #endif /* CFG_USB_KEYBOARD_H */

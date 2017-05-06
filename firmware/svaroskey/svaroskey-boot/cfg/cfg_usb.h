@@ -80,6 +80,6 @@
  * $WIZ$ type = "int"
  * $WIZ$ min = 8
  */
-#define CONFIG_EP0_MAX_SIZE 8
+#define CONFIG_EP0_MAX_SIZE 16
 
 #endif /* CFG_USB_H */
