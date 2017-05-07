@@ -1904,14 +1904,14 @@ static void usb_hw_init(void)
 	usb->CNTR = bmFRES;
 	timer_delayHp(1);
 
-	/* Issue a USB reset */
-	usb_hw_reset();
-
 	/* Clear spurious pending interrupt */
 	usb->ISTR = 0;
 
 	/* Register interrupt handler */
 	sysirq_setHandler(USB_LP_CAN_RX0_IRQHANDLER, usb_isr);
+
+	/* Issue a USB reset */
+	usb_hw_reset();
 
 	/* Software connection enable */
 	usb_connect();
