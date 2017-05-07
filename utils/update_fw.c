@@ -41,9 +41,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
-#include <hidapi.h>
-
 #include <string.h>
+#include <time.h>
+#include <hidapi.h>
 
 #define FEAT_STATUS          0x0
 #define FEAT_NONE            0x1
@@ -185,11 +185,10 @@ static int hid_writeBuff(hid_device *handle, UsbFeatureMsg *msg, uint8_t *buff, 
 }
 
 
-static int hid_none(hid_device *handle, UsbFeatureMsg *msg)
+static int hid_none(hid_device *handle, UsbFeatureMsg *msg, time_t timeout)
 {
-
-	//hid_set_nonblocking(handle, 1);
-	for (int i = 0; i < 3; i++)
+	time_t start = time(NULL);
+	do
 	{
 		int ret = sendRecv_msg("none", handle, msg, FEAT_NONE, \
 				NULL, 0, WAIT_REPLY);
@@ -197,8 +196,55 @@ static int hid_none(hid_device *handle, UsbFeatureMsg *msg)
 			continue;
 		else
 			return 0;
-	}
+
+	} while ((time(NULL) - start) < timeout);
+
 	return -1;
+}
+
+//static void hid_info(hid_device *hid)
+//{
+//	printf("Hid Device:\n");
+//	printf("\tType: %04hx %04hx\n", hid->vendor_id, hid->product_id);
+//	printf("\tPath: %s\n", hid->path);
+//	rintf("\tSerial_number: %ls\n", hid->serial_number);
+//	printf("\tManufacturer: %ls\n", hid->manufacturer_string);
+//	printf("\tProduct:      %ls\n", hid->product_string);
+//	printf("\tRelease:      %hx\n", hid->release_number);
+//	printf("\tInterface:    %d\n",  hid->interface_number);
+//	printf("\n");
+//}
+
+static hid_device *register_hid(hid_device *hid)
+{
+	struct hid_device_info *devs, *cur_dev;
+	devs = hid_enumerate(0x0, 0x0);
+	cur_dev = devs;
+	while (cur_dev)
+	{
+		if (cur_dev->vendor_id == 0x046d)
+		{
+			// Open the device using the VID, PID,
+			// and optionally the Serial number.
+			hid = hid_open_path(cur_dev->path);
+			if (!hid)
+			{
+				printf("Invalid VID or PID\n");
+				return NULL;
+			}
+			break;
+		}
+		cur_dev = cur_dev->next;
+	}
+	hid_free_enumeration(devs);
+
+	if (!devs || !hid)
+	{
+		printf("No Hid devices\n");
+		return NULL;
+	}
+
+	return hid;
 }
 
 static UsbFeatureMsg msg;
@@ -209,13 +255,13 @@ int main(int argc, char* argv[])
 {
 	if (argc < 2)
 	{
-		printf("You should specify firmware file.");
+		printf("You should specify firmware file.\n");
 		return -1;
 	}
 
 	if (!argv[1])
 	{
-		printf("File error.");
+		printf("File error.\n");
 		return -1;
 	}
 
@@ -223,50 +269,19 @@ int main(int argc, char* argv[])
 	// Initialize the hidapi library
 	if (hid_init())
 	{
-		printf("Unable to init usb.");
+		printf("Unable to init usb.\n");
 		return -1;
 	}
 
-	struct hid_device_info *devs, *cur_dev;
-	devs = hid_enumerate(0x0, 0x0);
-	cur_dev = devs;
-	while (cur_dev) {
-		if (cur_dev->vendor_id == 0x046d)
-		{
-			printf("Device Found\n");
-			printf("type: %04hx %04hx\n", cur_dev->vendor_id, cur_dev->product_id);
-			printf("path: %s\n", cur_dev->path);
-			printf("serial_number: %ls\n", cur_dev->serial_number);
-			printf("  Manufacturer: %ls\n", cur_dev->manufacturer_string);
-			printf("  Product:      %ls\n", cur_dev->product_string);
-			printf("  Release:      %hx\n", cur_dev->release_number);
-			printf("  Interface:    %d\n",  cur_dev->interface_number);
-			printf("\n");
-
-			// Open the device using the VID, PID,
-			// and optionally the Serial number.
-			handle = hid_open_path(cur_dev->path);
-			if (!handle)
-			{
-				printf("Invalid VID or PID");
-				return -1;
-			}
-			break;
-		}
-		cur_dev = cur_dev->next;
-	}
-	hid_free_enumeration(devs);
-
-	if (!devs || !handle)
-	{
-		printf("No Hid devices");
+	if (!(handle = register_hid(handle)))
 		return -1;
-	}
+
+	//hid_info(handle);
 
 	printf("Payload size[%lu]\n", sizeof(UsbFeatureMsg));
 
 	printf("Send some NONE cmd to wait board boot..\n");
-	if (hid_none(handle, &msg) < 0)
+	if (hid_none(handle, &msg, 5) < 0)
 	{
 		printf("Unable to talk with board\n");
 		return -1;
@@ -286,15 +301,28 @@ int main(int argc, char* argv[])
 		printf("Put it in SAFE mode.\n");
 		printf("Reset board..\n");
 		hid_reset(handle, &msg);
-		printf("Send some NONE cmd to wait board boot..\n");
-		if (hid_none(handle, &msg) < 0)
+
+		time_t start = time(NULL);
+		do
 		{
-			printf("Unable to talk with board\n");
-			return -1;
-		}
+			if ((time(NULL) - start) > 15)
+			{
+				printf("Comunnication Timeout\n");
+				return -1;
+			}
+
+			handle = register_hid(handle);
+			if (!handle)
+				continue;
+
+			printf("Send some NONE cmd to wait board boot..\n");
+			if (hid_none(handle, &msg, 0) == 0)
+				break;
+
+		} while (1);
 		printf("Board ready!\n");
 
-		int status = hid_status(handle, &msg);
+		status = hid_status(handle, &msg);
 		if (status < 0)
 		{
 			printf("Unable to get status\n");
@@ -302,6 +330,7 @@ int main(int argc, char* argv[])
 		}
 	}
 
+	printf("Status[%d]\n", status);
 	if (status == FEAT_ST_SAFE)
 	{
 		printf("Status is SAFE MODE [%d]\n", status);
