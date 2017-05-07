@@ -86,7 +86,7 @@ struct WrStatus
 	uint32_t wrote_len;
 };
 
-static int sendRecv_msg(hid_device *handle, UsbFeatureMsg *msg, \
+static int sendRecv_msg(char *name, hid_device *handle, UsbFeatureMsg *msg, \
 		uint8_t cmd, uint8_t *data, uint32_t len, uint8_t reply)
 {
 	msg->cmd = cmd;
@@ -100,10 +100,10 @@ static int sendRecv_msg(hid_device *handle, UsbFeatureMsg *msg, \
 	memcpy(&tmp[1], msg, PAYLOAD_LEN);
 
 	int ret = hid_send_feature_report(handle, tmp, sizeof(tmp));
-	printf("send [%d] %ld\n", PAYLOAD_LEN, sizeof(tmp));
+	printf("%s SEND [%d] %ld\n", name, PAYLOAD_LEN, sizeof(tmp));
 	if (ret < 0)
 	{
-		printf("Send Error: [%ls]\n", hid_error(handle));
+		printf("%s Error SEND: [%ls]\n", name, hid_error(handle));
 		return -1;
 	}
 
@@ -115,7 +115,7 @@ static int sendRecv_msg(hid_device *handle, UsbFeatureMsg *msg, \
 	ret = hid_get_feature_report(handle, tmp, PAYLOAD_LEN);
 	if (ret < 0)
 	{
-		printf("Get Error: [%ls]\n", hid_error(handle));
+		printf("%s Error GET: [%ls]\n", name, hid_error(handle));
 		return -1;
 	}
 
@@ -129,7 +129,7 @@ static int hid_status(hid_device *handle, UsbFeatureMsg *msg)
 	uint8_t buff[MSG_PAYLOAD_LEN];
 	for (int i = 0; i < 3; i++)
 	{
-		int ret = sendRecv_msg(handle, msg, FEAT_STATUS, buff, MSG_PAYLOAD_LEN, WAIT_REPLY);
+		int ret = sendRecv_msg("status", handle, msg, FEAT_STATUS, buff, MSG_PAYLOAD_LEN, WAIT_REPLY);
 		if (ret < 0)
 			continue;
 
@@ -142,7 +142,7 @@ static int hid_status(hid_device *handle, UsbFeatureMsg *msg)
 
 static int hid_reset(hid_device *handle, UsbFeatureMsg *msg)
 {
-	return sendRecv_msg(handle, msg, FEAT_RESET, NULL, 0, NO_REPLY);
+	return sendRecv_msg("reset", handle, msg, FEAT_RESET, NULL, 0, NO_REPLY);
 }
 
 struct WrCheck
@@ -156,7 +156,7 @@ static int hid_check(hid_device *handle, UsbFeatureMsg *msg, struct WrCheck *wr_
 {
 	for (int i = 0; i < 3; i++)
 	{
-		int ret = sendRecv_msg(handle, msg, FEAT_CHK_WRITE, \
+		int ret = sendRecv_msg("check", handle, msg, FEAT_CHK_WRITE, \
 				(unsigned char *)wr_check, sizeof(struct WrCheck), WAIT_REPLY);
 		if (ret < 0)
 			continue;
@@ -172,7 +172,7 @@ static int hid_writeBuff(hid_device *handle, UsbFeatureMsg *msg, uint8_t *buff, 
 {
 	for (int i = 0; i < 3; i++)
 	{
-		int ret = sendRecv_msg(handle, msg, FEAT_WRITE, \
+		int ret = sendRecv_msg("write", handle, msg, FEAT_WRITE, \
 				(unsigned char *)buff, len, WAIT_REPLY);
 		if (ret < 0)
 			continue;
@@ -187,9 +187,11 @@ static int hid_writeBuff(hid_device *handle, UsbFeatureMsg *msg, uint8_t *buff, 
 
 static int hid_none(hid_device *handle, UsbFeatureMsg *msg)
 {
+
+	//hid_set_nonblocking(handle, 1);
 	for (int i = 0; i < 3; i++)
 	{
-		int ret = sendRecv_msg(handle, msg, FEAT_NONE, \
+		int ret = sendRecv_msg("none", handle, msg, FEAT_NONE, \
 				NULL, 0, WAIT_REPLY);
 		if (ret < 0)
 			continue;
@@ -199,14 +201,12 @@ static int hid_none(hid_device *handle, UsbFeatureMsg *msg)
 	return -1;
 }
 
-
 static UsbFeatureMsg msg;
 static uint32_t crc_fw = 0;
 static uint8_t buff[MSG_PAYLOAD_LEN];
 
 int main(int argc, char* argv[])
 {
-	printf("%lu\n", sizeof(UsbFeatureMsg));
 	if (argc < 2)
 	{
 		printf("You should specify firmware file.");
@@ -229,12 +229,6 @@ int main(int argc, char* argv[])
 
 	struct hid_device_info *devs, *cur_dev;
 	devs = hid_enumerate(0x0, 0x0);
-	if (!devs)
-	{
-		printf("No Hid devices");
-		return -1;
-	}
-
 	cur_dev = devs;
 	while (cur_dev) {
 		if (cur_dev->vendor_id == 0x046d)
@@ -263,6 +257,13 @@ int main(int argc, char* argv[])
 	}
 	hid_free_enumeration(devs);
 
+	if (!devs || !handle)
+	{
+		printf("No Hid devices");
+		return -1;
+	}
+
+	printf("Payload size[%lu]\n", sizeof(UsbFeatureMsg));
 
 	printf("Send some NONE cmd to wait board boot..\n");
 	if (hid_none(handle, &msg) < 0)
