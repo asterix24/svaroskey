@@ -74,6 +74,7 @@
 #include <drv/usbkbd.h>
 #include <drv/eeprom.h>
 #include <drv/flash.h>
+#include <drv/usb.h>
 
 #include <io/kfile_block.h>
 
@@ -90,8 +91,8 @@
 #define NUM_LED_COLS   8
 #define NUM_LEDS       (NUM_LED_COLS * NUM_LED_ROWS)
 
-// Boot table to store fw crc and boot mode see hw_boot.h
-static BootMBR boot_mbr;
+#define BOOT_WAIT_TIME 5000
+
 
 static Sipo sipo;
 static Flash internal_flash;
@@ -109,6 +110,76 @@ static void hw_init(void)
 	AFIO = (reg32_t *)(AFIO_BASE + 4);
 	*AFIO &= ~(0x07000000);
 	*AFIO |=  (0x04000000);
+}
+
+static void hw_disableAll(void)
+{
+	RCC->APB2ENR = 0;
+	RCC->APB1ENR = 0;
+	RCC->AHBENR = 0;
+	RCC->APB1RSTR &= ~RCC_APB1_USB;
+}
+
+static int runApp(KFile *fd)
+{
+	// Boot table to store fw crc and boot mode see hw_boot.h
+	BootMBR boot_mbr;
+
+	// Read MBR Table.
+	LOG_INFO("Try to read MBR.\n");
+	kfile_read(fd, &boot_mbr, sizeof(BootMBR));
+
+	if (boot_mbr.key != BOOTKEY)
+		return 0;
+
+	LOG_INFO("MBR Found: key[0x%lX],Mode[%ld],len[%ld],CRC[%ld]\n", \
+			boot_mbr.key, boot_mbr.mode, boot_mbr.len, boot_mbr.crc);
+
+
+	uint8_t tmp[64];
+	size_t fw_len = boot_mbr.len;
+	uint32_t crc = 0;
+	do
+	{
+		size_t len = kfile_read(fd, tmp,  MIN(fw_len, sizeof(tmp)));
+		crc = crc32(tmp, len, crc);
+		fw_len -= len;
+	} while(fw_len);
+
+	kfile_seek(fd, sizeof(BootMBR), KSM_SEEK_SET);
+
+	LOG_INFO("Computed CRC[%ld] ? [%ld]\n", crc, boot_mbr.crc);
+	if (crc == boot_mbr.crc)
+	{
+		LOG_INFO("Wait a feature cmd from usb for a %ds..\n", BOOT_WAIT_TIME);
+		timer_t start = timer_clock();
+		while (1)
+		{
+			if (ticks_to_ms((timer_clock() - start)) > BOOT_WAIT_TIME)
+			{
+				//Ok, fw is good jump to it.
+				// load traget address from reset vector (4 bytes offset, BootMBR)
+				rom_start = *(void **)(MAIN_APP_ADDRESS);
+				LOG_INFO("Jump to main application, address 0x%p\n", rom_start);
+				usb_deviceUnregister(NULL);
+				hw_disableAll();
+				timer_cleanup();
+				IRQ_DISABLE;
+				START_APP();
+			}
+
+			if (usb_feature_ctx.flag == FEAT_ST_LOCK_SAFE)
+			{
+				LOG_INFO("Lock Boot..\n");
+				return 0;
+			}
+			cpu_relax();
+		}
+	}
+	else
+		LOG_INFO("App Fw is incosistent, so remaing in SAFE mode.\n");
+
+	return 0;
 }
 
 static void init(void)
@@ -150,53 +221,6 @@ static void init(void)
 	kblock_trim(&internal_flash.blk, TRIM_START, internal_flash.blk.blk_cnt - TRIM_START);
 	kfileblock_init(&flash, &internal_flash.blk);
 
-	// TODO Add boot sequence to force safe boot mode
-	// whit key combo and led blinking.
-
-	// Read MBR Table.
-	LOG_INFO("Try to read MBR..[%x]\n", BOOTKEY);
-	kfile_read(&flash.fd, &boot_mbr, sizeof(BootMBR));
-
-	if (boot_mbr.key == BOOTKEY)
-	{
-		LOG_INFO("MBR Found!\n");
-		LOG_INFO("\tkey     [0x%lx]\n", boot_mbr.key);
-		LOG_INFO("\tFW Mode [%ld]\n", boot_mbr.mode);
-		LOG_INFO("\tFW len  [%ld]\n", boot_mbr.len);
-		LOG_INFO("\tFW CRC  [%ld]\n", boot_mbr.crc);
-
-		LOG_INFO("Check crc.\n");
-		uint8_t tmp[64];
-		size_t fw_len = boot_mbr.len;
-		uint32_t crc = 0;
-		do
-		{
-			size_t len = kfile_read(&flash.fd, tmp,  MIN(fw_len, sizeof(tmp)));
-
-			crc = crc32(tmp, len, crc);
-			fw_len -= len;
-		} while(fw_len);
-
-		LOG_INFO("Computed CRC[%ld]\n", crc);
-		kfile_seek(&flash.fd, sizeof(BootMBR), KSM_SEEK_SET);
-
-		if ((crc == boot_mbr.crc) && (boot_mbr.mode == BOOT_APPMODE))
-		{
-			//Ok, fw is good jump to it.
-			// load traget address from reset vector (4 bytes offset, BootMBR)
-			rom_start = *(void **)(MAIN_APP_ADDRESS);
-			LOG_INFO("Jump to main application, address 0x%p\n", rom_start);
-			timer_cleanup();
-			IRQ_DISABLE;
-			START_APP();
-		}
-
-		LOG_INFO("App Fw is incosistent, so remaing in SAFE mode.\n");
-	}
-
-	LOG_INFO("Boot in SAFE MODE\n");
-
-
 	/* init usb feature to run custom cmd. */
 	usbfeature_init(&usb_feature_ctx, &usb_feature_msg, &flash.fd);
 	usbfeature_setStatus(&usb_feature_ctx, FEAT_ST_SAFE);
@@ -204,6 +228,9 @@ static void init(void)
 	/* Initialize the USB keyboard device */
 	usbkbd_eventRegister(); // For custom feature
 	usbkbd_init(0);
+
+	// TODO Add boot sequence to force safe boot mode
+	// whit key combo and led blinking.
 }
 
 static void NORETURN feature_proc(void)
@@ -222,7 +249,11 @@ int main(void)
 
 	proc_new(feature_proc, NULL, 0x400, NULL);
 
-	while (1) {
+	runApp(&flash.fd);
+	LOG_INFO("Boot in SAFE MODE\n");
+
+	while (1)
+	{
 		timer_delay(1000);
 	}
 }
