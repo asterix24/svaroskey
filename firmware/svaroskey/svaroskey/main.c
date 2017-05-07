@@ -120,7 +120,7 @@ static void init(void)
 	/* Initialize debugging module (allow kprintf(), etc.) */
 	kdbg_init();
 
-	kprintf("==== Main HID App ====\n");
+	kprintf("\n\n==== Main HID App ====\n");
 
 	/* Initialize system timer */
 	timer_init();
@@ -155,6 +155,15 @@ static void init(void)
 
 }
 
+static void NORETURN feature_proc(void)
+{
+	/* Wait feature command from usb */
+	while (1)
+	{
+		usbfeature_poll(&usb_feature_ctx);
+	}
+}
+
 static void NORETURN scan_proc(void)
 {
 	UsbKbdEvent *event;
@@ -171,8 +180,6 @@ static void NORETURN scan_proc(void)
 	}
 }
 
-static uint8_t buf[128];
-
 int main(void)
 {
 	/* Hardware initialization */
@@ -180,14 +187,9 @@ int main(void)
 
 	/* Sample process */
 	proc_new(scan_proc, NULL, KERN_MINSTACKSIZE, NULL);
+	proc_new(feature_proc, NULL, 0x400, NULL);
 
 	while (1) {
-		kfile_read(&flash.fd, buf, 64);
-		kprintf("data[%d]:", 0);
-		for (int i=0; i<64; i++)
-			kprintf("%x ", buf[i]);
-		kprintf("\n");
-
 		timer_delay(5000);
 	}
 }
