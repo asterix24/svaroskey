@@ -1917,6 +1917,25 @@ static void usb_hw_init(void)
 	usb_connect();
 }
 
+static void usb_hw_disable(void)
+{
+	usb->CNTR &= 0x00FF;
+	usb->ISTR = 0;
+	usb->CNTR = bmFRES;
+	timer_delay(10);
+
+	usb->CNTR |= bmPDWN;
+	RCC->APB1ENR &= ~RCC_APB1_USB;
+}
+
+int usb_deviceUnregister(UsbDevice *dev)
+{
+	(void)dev;
+	usb_hw_disable();
+
+	return 0;
+}
+
 /* Initialize the USB controller */
 static void usb_init(void)
 {
@@ -1941,3 +1960,4 @@ int usb_deviceRegister(UsbDevice *dev)
 
 	return 0;
 }
+

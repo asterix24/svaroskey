@@ -527,5 +527,6 @@ INLINE ssize_t usb_endpointWrite(int ep, const void *buffer, ssize_t size)
  * Register a generic USB device driver \a dev in the USB controller.
  */
 int usb_deviceRegister(UsbDevice *dev);
+int usb_deviceUnregister(UsbDevice *dev);
 
 #endif /* USB_H */
