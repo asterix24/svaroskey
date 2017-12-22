@@ -6,6 +6,10 @@
 #include "mappings.h"
 
 #include <cfg/debug.h>
+#define LOG_LEVEL  2
+#define LOG_FORMAT 0
+
+#include <cfg/log.h>
 
 static uint8_t previous_mods = 0;
 
@@ -66,6 +70,8 @@ static void keymap_update_key(int i)
 void keymap_scan(void)
 {
 	int i;
+	//LOG_INFO("info\n");
+	//LOG_ERR("err\n");
 
 	// Reset keycodes
 	event.mods = 0;

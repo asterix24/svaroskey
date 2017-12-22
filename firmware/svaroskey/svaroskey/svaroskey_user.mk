@@ -36,7 +36,7 @@ svaroskey_USER_ASRC = \
 
 # Flags included by the user.
 svaroskey_USER_LDFLAGS = \
-	-Wl,-T svaroskey/stm32f103rb_rom.ld \
+	#-Wl,-T svaroskey/stm32f103rb_rom.ld \
 	#
 
 # Flags included by the user.
