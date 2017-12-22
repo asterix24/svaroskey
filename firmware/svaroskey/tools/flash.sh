@@ -20,5 +20,4 @@ if [ ! -f "$BIN" ]; then
     exit 1
 fi
 
-"$DIR/stm32loader" -p "$DEV" -e -w "$BIN"
-
+"$DIR/stm32flash" -w "$BIN" -b 115200 "$DEV"
