@@ -173,7 +173,7 @@ static void NORETURN scan_proc(void)
 	{
 		keymap_scan();
 
-		if ((event = keymap_get_next_code()) != NULL)
+		if ((event = get_usb_report()) != NULL)
 			usbkbd_sendEvent(event);
 
 		timer_delay(1);

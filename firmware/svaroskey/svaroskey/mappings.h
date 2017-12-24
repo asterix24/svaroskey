@@ -3,8 +3,8 @@
 
 #include "keymap.h"
 
-extern KeyMapping keymap_mapping[];
+extern key_id_t pressed_key_ids[];
 
-KeyMapping * mapping_get_key(int id);
+const PhysicalKey* get_physical_key(key_id_t key_id);
 
 #endif /* SVAROSKEY_LAYOUTS_H */

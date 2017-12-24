@@ -1,8 +1,6 @@
-#include "keymap.h"
-#include "keycodes.h"
-#include "cfg/cfg_keymap.h"
+#include "mappings.h"
 
-#define CONFIG_MAPPING_LATEST_REVISION 1
+#include "definitions.h"
 
 #if !defined CONFIG_MAPPING_REVISION
 #error CONFIG_MAPPING_REVISION is not defined.
@@ -10,12 +8,14 @@
 #error CONFIG_MAPPING_REVISION is not valid.
 #endif
 
-#define KPA 0
-#define KPB 1
-#define KPC 2
-#define KPD 3
+#define KPA KEYBOARD_PORT_A
+#define KPB KEYBOARD_PORT_B
+#define KPC KEYBOARD_PORT_C
+#define KPD KEYBOARD_PORT_D
 
-KeyMapping keymap_mapping[] = {
+key_id_t pressed_key_ids[LAYOUT_SIZE] = {0};
+
+PhysicalKey keyboard_keys[LAYOUT_SIZE] = {
 #if (CONFIG_MAPPING_REVISION == 0)
 	/* #0 - #11 */
 	{ KPB, 0,  KPC, 0  }, { KPB, 1,  KPC, 0  }, { KPB, 3,  KPC, 0  },
@@ -49,9 +49,7 @@ KeyMapping keymap_mapping[] = {
 
 	/* #60 - #71 */
 	{ KPB, 0,  KPC, 5  }, { KPB, 1,  KPC, 5  }, { KPB, 3,  KPC, 5  },
-	{ KPB, 4,  KPC, 5  }, { KPB, 5,  KPC, 5  }, { KPB, 6,  KPC, 5  },
-	{ KPB, 7,  KPC, 5  }, { KPB, 8,  KPC, 5  }, { KPB, 9,  KPC, 5  },
-	{ KPB, 12, KPC, 5  }, { KPB, 13, KPC, 5  }, { KPB, 14, KPC, 5  },
+	{ KPB, 4,  KPC, 5  }, { KPB, 5,  KPC, 5  },
 #elif (CONFIG_MAPPING_REVISION == 1)
 	/* Row 0 */
 	{ KPC, 0,  KPB, 0  }, { KPC, 0,  KPB, 3  }, { KPC, 0,  KPB, 4  },
@@ -118,3 +116,8 @@ KeyMapping keymap_mapping[] = {
 	{ KPC, 12, KPB, 8  }, { KPC, 12, KPB, 12 }, { KPC, 12, KPB, 13 },
 #endif
 };
+
+const PhysicalKey* get_physical_key(key_id_t key_id)
+{
+	return &keyboard_keys[key_id];
+}

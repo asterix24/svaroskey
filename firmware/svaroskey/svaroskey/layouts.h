@@ -3,15 +3,14 @@
 
 #include "keymap.h"
 
-#if (CONFIG_LAYOUT_REVISION == 0)
-#define LAYOUT_SIZE 65
-#elif (CONFIG_LAYOUT_REVISION == 1)
-#define LAYOUT_SIZE 106
-#endif
+typedef struct
+{
+	scancode_t scancode;
+	uint8_t modifiers;
+} LogicalKey;
 
-extern KeyBinding keymap_layout[LAYOUT_SIZE];
-extern KeyBinding keymap_alternate_layout[LAYOUT_SIZE];
-
-KeyBinding * layout_get_key(int id);
+const LogicalKey* get_logical_key(int layer, key_id_t key_id);
+bool is_modifier(const LogicalKey* lk);
+bool is_custom(const LogicalKey* lk);
 
 #endif /* SVAROSKEY_LAYOUTS_H */

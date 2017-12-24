@@ -112,13 +112,28 @@
 #define   KEY_F24               115
 #define   KEY_HELP              117
 #define   KEY_MENU              118
-#define   KEY_LEFTCONTROL       ((1 << 0) << 8) // 224
-#define   KEY_LEFTSHIFT         ((1 << 1) << 8) // 225
-#define   KEY_LEFTALT           ((1 << 2) << 8) // 226
-#define   KEY_LEFTGUI           ((1 << 3) << 8) // 227
-#define   KEY_RIGHTCONTROL      ((1 << 4) << 8) // 228
-#define   KEY_RIGHTSHIFT        ((1 << 5) << 8) // 229
-#define   KEY_RIGHTALT          ((1 << 6) << 8) // 230
-#define   KEY_RIGHTGUI          ((1 << 7) << 8) // 231
+#define   KEY_LEFTCONTROL       224
+#define   KEY_LEFTSHIFT         225
+#define   KEY_LEFTALT           226
+#define   KEY_LEFTGUI           227
+#define   KEY_RIGHTCONTROL      228
+#define   KEY_RIGHTSHIFT        229
+#define   KEY_RIGHTALT          230
+#define   KEY_RIGHTGUI          231
+
+#define KEY_CUSTOM_START	61440 // 0xf000
+
+#define KEY_LAYER_1		61440
+
+#define KEY_CUSTOM_END		65535 // 0xffff
+
+#define MOD_LEFTCONTROL  (1 << 0)
+#define MOD_LEFTSHIFT    (1 << 1)
+#define MOD_LEFTALT      (1 << 2)
+#define MOD_LEFTGUI      (1 << 3)
+#define MOD_RIGHTCONTROL (1 << 4)
+#define MOD_RIGHTSHIFT   (1 << 5)
+#define MOD_RIGHTALT     (1 << 6)
+#define MOD_RIGHTGUI     (1 << 7)
 
 #endif /* SVAROSKEY_KEYCODES_H */

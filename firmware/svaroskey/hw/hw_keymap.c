@@ -1,5 +1,4 @@
 #include "hw_keymap.h"
-#include <cfg/cfg_keymap.h>
 
 #include <drv/timer.h>
 
@@ -27,7 +26,7 @@ static struct stm32_gpio * const port_mappings[] = {
 	((struct stm32_gpio *)GPIOC_BASE),
 };
 
-void KEYMAP_INIT(void) {
+void keyboard_init(void) {
 	/* Enable clocking on GPIOA, GPIOB */
 	RCC->APB2ENR |= RCC_APB2_GPIOB | RCC_APB2_GPIOC;
 
@@ -45,21 +44,21 @@ void KEYMAP_INIT(void) {
 	stm32_gpioPinWrite(KEY_ROW_GPIO_BASE, KEY_ROW_PINS, false);
 }
 
-bool KEYMAP_READ(KeyMapping * k) {
+bool is_key_down(const PhysicalKey* pk) {
 	struct stm32_gpio *wPort, *rPort;
 	int wPin, rPin;
 	bool ret;
 
 #ifdef CONFIG_INVERT_LAYOUT
-	wPort = port_mappings[k->col_port];
-	rPort = port_mappings[k->row_port];
-	wPin = BV(k->col_pin);
-	rPin = BV(k->row_pin);
+	wPort = port_mappings[pk->col_port];
+	rPort = port_mappings[pk->row_port];
+	wPin = BV(pk->col_pin);
+	rPin = BV(pk->row_pin);
 #else
-	wPort = port_mappings[k->row_port];
-	rPort = port_mappings[k->col_port];
-	wPin = BV(k->row_pin);
-	rPin = BV(k->col_pin);
+	wPort = port_mappings[pk->row_port];
+	rPort = port_mappings[pk->col_port];
+	wPin = BV(pk->row_pin);
+	rPin = BV(pk->col_pin);
 #endif
 
 	/* Select row */

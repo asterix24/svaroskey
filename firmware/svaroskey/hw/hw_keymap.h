@@ -3,8 +3,8 @@
 
 #include "keymap.h"
 
-bool KEYMAP_READ(KeyMapping * k);
-void KEYMAP_INIT(void);
+bool is_key_down(const PhysicalKey* pk);
+void keyboard_init(void);
 
 #endif /* HW_KEYMAP_H */
 
