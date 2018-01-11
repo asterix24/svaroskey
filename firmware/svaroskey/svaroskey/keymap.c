@@ -3,9 +3,9 @@
 #include "hw/hw_keymap.h"
 
 #include "definitions.h"
+#include "globals.h"
 #include "keycodes.h"
-#include "layouts.h"
-#include "mappings.h"
+#include "logical_key.h"
 
 #include <cfg/debug.h>
 #define LOG_LEVEL  3

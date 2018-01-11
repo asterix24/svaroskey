@@ -10,9 +10,10 @@ svaroskey_PROGRAMMER_PORT = /dev/tty.usbserial-AI04D7T3
 # Files included by the user.
 svaroskey_USER_CSRC = \
 	$(svaroskey_SRC_PATH)/main.c \
+	$(svaroskey_SRC_PATH)/globals.c \
 	$(svaroskey_SRC_PATH)/keymap.c \
-	$(svaroskey_SRC_PATH)/layouts.c \
-	$(svaroskey_SRC_PATH)/mappings.c \
+	$(svaroskey_SRC_PATH)/logical_key.c \
+	$(svaroskey_SRC_PATH)/physical_key.c \
 	common/usbfeature.c \
 	common/crc32.c \
 	$(svaroskey_HW_PATH)/hw/hw_keymap.c \

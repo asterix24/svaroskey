@@ -1,4 +1,4 @@
-#include "mappings.h"
+#include "physical_key.h"
 
 #include "definitions.h"
 
@@ -12,8 +12,6 @@
 #define KPB KEYBOARD_PORT_B
 #define KPC KEYBOARD_PORT_C
 #define KPD KEYBOARD_PORT_D
-
-key_id_t pressed_key_ids[LAYOUT_SIZE] = {0};
 
 PhysicalKey keyboard_keys[LAYOUT_SIZE] = {
 #if (CONFIG_MAPPING_REVISION == 0)

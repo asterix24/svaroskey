@@ -1,7 +1,7 @@
-#ifndef SVAROSKEY_LAYOUTS_H
-#define SVAROSKEY_LAYOUTS_H
+#ifndef SVAROSKEY_LOGICAL_KEY_H
+#define SVAROSKEY_LOGICAL_KEY_H
 
-#include "keymap.h"
+#include "typedefs.h"
 
 typedef struct
 {
@@ -9,8 +9,9 @@ typedef struct
 	uint8_t modifiers;
 } LogicalKey;
 
+
 const LogicalKey* get_logical_key(int layer, key_id_t key_id);
 bool is_modifier(const LogicalKey* lk);
 bool is_custom(const LogicalKey* lk);
 
-#endif /* SVAROSKEY_LAYOUTS_H */
+#endif
