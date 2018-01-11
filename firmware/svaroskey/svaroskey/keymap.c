@@ -85,6 +85,17 @@ static void generate_usb_report(int num_pressed)
 	for (i = 0; i < num_pressed; i++)
 	{
 		key_id_t k_id = pressed_key_ids[i];
+
+		// we get the base-layer key, and ignore it if it is a custom
+		// key. This is because we only support custom keys on the
+		// base layer
+		const LogicalKey* lk0 = get_logical_key(0, k_id);
+		if (is_custom(lk0))
+		{
+			// custom keys are only used to select the layout layer
+			continue;
+		}
+
 		const LogicalKey* lk = get_logical_key(
 			kp_info.chosen_layer,
 			k_id
@@ -93,12 +104,6 @@ static void generate_usb_report(int num_pressed)
 		if (is_modifier(lk))
 		{
 			usb_report.mods |= lk->modifiers;
-			continue;
-		}
-
-		if (is_custom(lk))
-		{
-			// custom keys are only used to select the layout layer
 			continue;
 		}
 
