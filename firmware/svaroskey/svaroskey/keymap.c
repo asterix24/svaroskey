@@ -49,7 +49,7 @@ static void generate_keypresses_info(int num_pressed)
 	{
 		// layer keys are only supported on the base layer.
 		// TODO decide whether we want this limitation
-		key_id_t k_id = pressed_key_ids[i];
+		key_id_t k_id = all_pressed_key_ids[i];
 		const LogicalKey* lk = get_logical_key(0, k_id);
 
 		if (!is_custom(lk))
@@ -84,7 +84,7 @@ static void generate_usb_report(int num_pressed)
 	int num_key_codes = 0;
 	for (i = 0; i < num_pressed; i++)
 	{
-		key_id_t k_id = pressed_key_ids[i];
+		key_id_t k_id = all_pressed_key_ids[i];
 
 		// we get the base-layer key, and ignore it if it is a custom
 		// key. This is because we only support custom keys on the
@@ -131,7 +131,7 @@ void keymap_scan(void)
 		if (!is_key_down(pk))
 			continue;
 
-		pressed_key_ids[num_pressed_keys] = k_id;
+		all_pressed_key_ids[num_pressed_keys] = k_id;
 		num_pressed_keys++;
 	}
 

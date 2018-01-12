@@ -3,6 +3,6 @@
 
 #include "typedefs.h"
 
-extern key_id_t pressed_key_ids[];
+extern key_id_t all_pressed_key_ids[];
 
 #endif
