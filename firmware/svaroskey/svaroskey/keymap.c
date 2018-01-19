@@ -15,9 +15,15 @@
 
 typedef struct
 {
-	int chosen_layer;
-} KeypressesInfo;
-static KeypressesInfo kp_info;
+	size_t num_substituted_keys;
+	size_t remaining_custom_keys;
+} KeySubstitutionResult;
+
+typedef struct
+{
+	bool valid;
+	size_t layer;
+} LayerFetchResult;
 
 static UsbKbdEvent usb_report = {
 	.mods = 0,
@@ -35,38 +41,6 @@ UsbKbdEvent* get_usb_report()
 	return NULL;
 }
 
-static void clean_keypresses_info(void)
-{
-	kp_info.chosen_layer = 0;
-}
-
-static void generate_keypresses_info(int num_pressed)
-{
-	clean_keypresses_info();
-
-	int i = 0;
-	for (i = 0; i < num_pressed; i++)
-	{
-		// layer keys are only supported on the base layer.
-		// TODO decide whether we want this limitation
-		key_id_t k_id = all_pressed_key_ids[i];
-		const LogicalKey* lk = get_logical_key(0, k_id);
-
-		if (!is_custom(lk))
-		{
-			continue;
-		}
-
-		// TODO if we want a different layer when pressing two
-		// layer keys down, we must rework the way we calculate
-		// the layer
-		if (lk->scancode == KEY_LAYER_1) {
-			kp_info.chosen_layer = 1;
-			break;
-		}
-	}
-}
-
 static void clean_report(void)
 {
 	usb_report.mods = 0;
@@ -76,38 +50,39 @@ static void clean_report(void)
 	}
 }
 
-static void generate_usb_report(int num_pressed)
+static void generate_usb_report(size_t layer, size_t num_std_pressed)
 {
-	generate_keypresses_info(num_pressed);
+	size_t i = 0;
+	size_t num_key_codes = 0;
 
-	int i = 0;
-	int num_key_codes = 0;
-	for (i = 0; i < num_pressed; i++)
+	for (i = 0; i < num_std_pressed; i++)
 	{
-		key_id_t k_id = all_pressed_key_ids[i];
+		key_id_t k_id = std_pressed_key_ids[i];
 
-		// we get the base-layer key, and ignore it if it is a custom
-		// key. This is because we only support custom keys on the
-		// base layer
-		const LogicalKey* lk0 = get_logical_key(0, k_id);
-		if (is_custom(lk0))
+		// modifiers are persisted across layers for usability
+		const LogicalKey* mod_lk = get_logical_key(0, k_id);
+		if (is_modifier(mod_lk))
 		{
-			// custom keys are only used to select the layout layer
+			usb_report.mods |= mod_lk->modifiers;
 			continue;
 		}
 
-		const LogicalKey* lk = get_logical_key(
-			kp_info.chosen_layer,
-			k_id
-		);
-
+		const LogicalKey* lk = get_logical_key(layer, k_id);
+		// one *can* define keys on non-base layers as additional
+		// modifiers, though the usefulness of that is debatable
 		if (is_modifier(lk))
 		{
 			usb_report.mods |= lk->modifiers;
 			continue;
 		}
 
-		if (num_key_codes < 5)
+		if (lk->scancode == KEY_NOOP)
+		{
+			// do not fill the usb report up with useless key codes
+			continue;
+		}
+
+		if (num_key_codes < 6)
 		{
 			usb_report.mods |= lk->modifiers;
 			usb_report.codes[num_key_codes] = lk->scancode;
@@ -118,24 +93,116 @@ static void generate_usb_report(int num_pressed)
 	report_ready = true;
 }
 
+static LayerFetchResult layer_value(scancode_t sc) {
+	switch(sc) {
+	case KEY_LAYER_1: return (LayerFetchResult){true, 1};
+	case KEY_LAYER_2: return (LayerFetchResult){true, 2};
+	case KEY_LAYER_3: return (LayerFetchResult){true, 3};
+	}
+
+	return (LayerFetchResult){false, 0};
+}
+
+static size_t calculate_layer(size_t num_substituted_keys, size_t num_custom_keys) {
+	/* We check if a layer key is among the substituted ones first.
+	 * For example if we defined LAYER1 + LAYER2 to be LAYER3, LAYER1 and
+	 * LAYER2 will be removed from `custom_pressed_key_ids` but the logical
+	 * LAYER3 key will be placed in `substituted_keys`.
+	 *
+	 * If no substituted key defines a layer, we see if a layer key is
+	 * pressed with no substitution semantics, for example when simply
+	 * pressing LAYER1 + <something>, the logical key for <something>
+	 * must be fetched from the first layer.
+	 *
+	 * If no layer key is being pressed, we return 0, which signals the
+	 * base layer.
+	 */
+
+	size_t i = 0;
+	for (i = 0; i < num_substituted_keys; i++) {
+		const LogicalKey* lk = substituted_keys[i];
+		LayerFetchResult result = layer_value(lk->scancode);
+		if (result.valid) return result.layer;
+	}
+
+	for (i = 0; i < num_custom_keys; i++) {
+		const LogicalKey* lk = get_logical_key(
+			0, custom_pressed_key_ids[i]
+		);
+		LayerFetchResult result = layer_value(lk->scancode);
+		if (result.valid) return result.layer;
+	}
+
+	return 0; // base layer
+}
+
+static KeySubstitutionResult substitute_custom_keys(size_t num_custom_keys) {
+	// TODO implement the substitution logic properly
+	// as a test, we manually substitute LAYER1 + LAYER2 with LAYER3
+	if (num_custom_keys != 2) {
+		return (KeySubstitutionResult){0, num_custom_keys};
+	}
+
+	const LogicalKey* lk1 = get_logical_key(0, custom_pressed_key_ids[0]);
+	const LogicalKey* lk2 = get_logical_key(0, custom_pressed_key_ids[1]);
+
+	if (
+		(
+			lk1->scancode == KEY_LAYER_1 &&
+			lk2->scancode == KEY_LAYER_2
+		)
+		|| (
+			lk1->scancode == KEY_LAYER_2 &&
+			lk2->scancode == KEY_LAYER_1
+		)
+	) {
+		substituted_keys[0]->scancode = KEY_LAYER_3;
+		substituted_keys[0]->modifiers = 0;
+		return (KeySubstitutionResult){1, 0};
+	}
+
+	return (KeySubstitutionResult){0, num_custom_keys};
+}
+
+static void keyfetch_algo(size_t num_std_keys, size_t num_custom_keys) {
+	KeySubstitutionResult result = substitute_custom_keys(num_custom_keys);
+	size_t layer = calculate_layer(
+		result.num_substituted_keys,
+		result.remaining_custom_keys
+	);
+	generate_usb_report(layer, num_std_keys);
+}
+
 void keymap_scan(void)
 {
 	report_ready = false;
 	clean_report();
 
-	int num_pressed_keys = 0;
+	size_t std_pressed_keys = 0;
+	size_t custom_pressed_keys = 0;
 	key_id_t k_id = 0;
+
 	for (k_id = 0; k_id < LAYOUT_SIZE; k_id++) {
 		const PhysicalKey* pk = get_physical_key(k_id);
 
 		if (!is_key_down(pk))
 			continue;
 
-		all_pressed_key_ids[num_pressed_keys] = k_id;
-		num_pressed_keys++;
+		const LogicalKey* lk = get_logical_key(0, k_id);
+		if (is_custom(lk)) {
+			if (custom_pressed_keys >= MAX_CUSTOM_KEYPRESSES) {
+				continue;
+			}
+			custom_pressed_key_ids[custom_pressed_keys] = k_id;
+			custom_pressed_keys++;
+			continue;
+		}
+
+		std_pressed_key_ids[std_pressed_keys] = k_id;
+		std_pressed_keys++;
 	}
 
-	generate_usb_report(num_pressed_keys);
+	keyfetch_algo(std_pressed_keys, custom_pressed_keys);
 }
 
 void keymap_init(void)

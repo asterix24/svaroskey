@@ -124,6 +124,10 @@
 #define KEY_CUSTOM_START	61440 // 0xf000
 
 #define KEY_LAYER_1		61440
+#define KEY_LAYER_2		61441
+#define KEY_LAYER_3		61442
+
+#define KEY_NOOP		65535
 
 #define KEY_CUSTOM_END		65535 // 0xffff
 

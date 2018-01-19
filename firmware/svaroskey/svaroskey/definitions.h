@@ -14,6 +14,8 @@
 	#define LAYOUT_SIZE 65
 #endif
 
+#define MAX_CUSTOM_KEYPRESSES 9
+
 #define KEYBOARD_PORT_A 0
 #define KEYBOARD_PORT_B 1
 #define KEYBOARD_PORT_C 2
