@@ -15,8 +15,8 @@
 
 typedef struct
 {
-	size_t num_substituted_keys;
-	size_t remaining_custom_keys;
+	size_t n_sub_keys;
+	size_t n_cus_keys;
 } KeySubstitutionResult;
 
 typedef struct
@@ -51,12 +51,12 @@ static void clean_report(void)
 	}
 }
 
-void generate_usb_report(size_t layer, size_t num_std_pressed)
+void generate_usb_report(size_t layer, size_t n_std_keys)
 {
 	size_t i = 0;
 	size_t num_key_codes = 0;
 
-	for (i = 0; i < num_std_pressed; i++)
+	for (i = 0; i < n_std_keys; i++)
 	{
 		key_id_t k_id = std_pressed_key_ids[i];
 
@@ -106,7 +106,7 @@ static LayerFetchResult layer_value(scancode_t sc)
 	return (LayerFetchResult){false, 0};
 }
 
-static size_t calculate_layer(size_t num_substituted_keys, size_t num_custom_keys)
+static size_t calculate_layer(size_t n_sub_keys, size_t n_cus_keys)
 {
 	/* We check if a layer key is among the substituted ones first.
 	 * For example if we defined LAYER1 + LAYER2 to be LAYER3, LAYER1 and
@@ -123,32 +123,39 @@ static size_t calculate_layer(size_t num_substituted_keys, size_t num_custom_key
 	 */
 
 	size_t i = 0;
-	for (i = 0; i < num_substituted_keys; i++)
+	for (i = 0; i < n_sub_keys; i++)
 	{
 		const LogicalKey* lk = substituted_keys[i];
-		LayerFetchResult result = layer_value(lk->scancode);
-		if (result.valid) return result.layer;
+		LayerFetchResult r = layer_value(lk->scancode);
+
+		if (r.valid)
+		{
+			return r.layer;
+		}
 	}
 
-	for (i = 0; i < num_custom_keys; i++)
+	for (i = 0; i < n_cus_keys; i++)
 	{
 		const LogicalKey* lk = get_logical_key(
 			0, custom_pressed_key_ids[i]
 		);
-		LayerFetchResult result = layer_value(lk->scancode);
-		if (result.valid) return result.layer;
+		LayerFetchResult r = layer_value(lk->scancode);
+		if (r.valid)
+		{
+			return r.layer;
+		}
 	}
 
 	return 0; // base layer
 }
 
-static KeySubstitutionResult substitute_custom_keys(size_t num_custom_keys)
+static KeySubstitutionResult substitute_custom_keys(size_t n_cus_keys)
 {
 	// TODO implement the substitution logic properly
 	// as a test, we manually substitute LAYER1 + LAYER2 with LAYER3
-	if (num_custom_keys != 2)
+	if (n_cus_keys != 2)
 	{
-		return (KeySubstitutionResult){0, num_custom_keys};
+		return (KeySubstitutionResult){0, n_cus_keys};
 	}
 
 	const LogicalKey* lk1 = get_logical_key(0, custom_pressed_key_ids[0]);
@@ -170,16 +177,13 @@ static KeySubstitutionResult substitute_custom_keys(size_t num_custom_keys)
 		return (KeySubstitutionResult){1, 0};
 	}
 
-	return (KeySubstitutionResult){0, num_custom_keys};
+	return (KeySubstitutionResult){0, n_cus_keys};
 }
 
-size_t keyfetch_algo(size_t num_custom_keys)
+size_t keyfetch_algo(size_t n_cus_keys)
 {
-	KeySubstitutionResult result = substitute_custom_keys(num_custom_keys);
-	return calculate_layer(
-		result.num_substituted_keys,
-		result.remaining_custom_keys
-	);
+	KeySubstitutionResult r = substitute_custom_keys(n_cus_keys);
+	return calculate_layer(r.n_sub_keys, r.n_cus_keys);
 }
 
 KeymapScanResult keymap_scan(void)
