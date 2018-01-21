@@ -34,7 +34,8 @@ static bool report_ready = false;
 
 UsbKbdEvent* get_usb_report()
 {
-	if (report_ready) {
+	if (report_ready)
+	{
 		report_ready = false;
 		return &usb_report;
 	}
@@ -93,8 +94,10 @@ void generate_usb_report(size_t layer, size_t num_std_pressed)
 	report_ready = true;
 }
 
-static LayerFetchResult layer_value(scancode_t sc) {
-	switch(sc) {
+static LayerFetchResult layer_value(scancode_t sc)
+{
+	switch(sc)
+	{
 	case KEY_LAYER_1: return (LayerFetchResult){true, 1};
 	case KEY_LAYER_2: return (LayerFetchResult){true, 2};
 	case KEY_LAYER_3: return (LayerFetchResult){true, 3};
@@ -103,7 +106,8 @@ static LayerFetchResult layer_value(scancode_t sc) {
 	return (LayerFetchResult){false, 0};
 }
 
-static size_t calculate_layer(size_t num_substituted_keys, size_t num_custom_keys) {
+static size_t calculate_layer(size_t num_substituted_keys, size_t num_custom_keys)
+{
 	/* We check if a layer key is among the substituted ones first.
 	 * For example if we defined LAYER1 + LAYER2 to be LAYER3, LAYER1 and
 	 * LAYER2 will be removed from `custom_pressed_key_ids` but the logical
@@ -119,13 +123,15 @@ static size_t calculate_layer(size_t num_substituted_keys, size_t num_custom_key
 	 */
 
 	size_t i = 0;
-	for (i = 0; i < num_substituted_keys; i++) {
+	for (i = 0; i < num_substituted_keys; i++)
+	{
 		const LogicalKey* lk = substituted_keys[i];
 		LayerFetchResult result = layer_value(lk->scancode);
 		if (result.valid) return result.layer;
 	}
 
-	for (i = 0; i < num_custom_keys; i++) {
+	for (i = 0; i < num_custom_keys; i++)
+	{
 		const LogicalKey* lk = get_logical_key(
 			0, custom_pressed_key_ids[i]
 		);
@@ -136,10 +142,12 @@ static size_t calculate_layer(size_t num_substituted_keys, size_t num_custom_key
 	return 0; // base layer
 }
 
-static KeySubstitutionResult substitute_custom_keys(size_t num_custom_keys) {
+static KeySubstitutionResult substitute_custom_keys(size_t num_custom_keys)
+{
 	// TODO implement the substitution logic properly
 	// as a test, we manually substitute LAYER1 + LAYER2 with LAYER3
-	if (num_custom_keys != 2) {
+	if (num_custom_keys != 2)
+	{
 		return (KeySubstitutionResult){0, num_custom_keys};
 	}
 
@@ -155,7 +163,8 @@ static KeySubstitutionResult substitute_custom_keys(size_t num_custom_keys) {
 			lk1->scancode == KEY_LAYER_2 &&
 			lk2->scancode == KEY_LAYER_1
 		)
-	) {
+	)
+	{
 		substituted_keys[0]->scancode = KEY_LAYER_3;
 		substituted_keys[0]->modifiers = 0;
 		return (KeySubstitutionResult){1, 0};
@@ -164,7 +173,8 @@ static KeySubstitutionResult substitute_custom_keys(size_t num_custom_keys) {
 	return (KeySubstitutionResult){0, num_custom_keys};
 }
 
-size_t keyfetch_algo(size_t num_custom_keys) {
+size_t keyfetch_algo(size_t num_custom_keys)
+{
 	KeySubstitutionResult result = substitute_custom_keys(num_custom_keys);
 	return calculate_layer(
 		result.num_substituted_keys,
@@ -181,15 +191,18 @@ KeymapScanResult keymap_scan(void)
 	size_t custom_pressed_keys = 0;
 	key_id_t k_id = 0;
 
-	for (k_id = 0; k_id < LAYOUT_SIZE; k_id++) {
+	for (k_id = 0; k_id < LAYOUT_SIZE; k_id++)
+	{
 		const PhysicalKey* pk = get_physical_key(k_id);
 
 		if (!is_key_down(pk))
 			continue;
 
 		const LogicalKey* lk = get_logical_key(0, k_id);
-		if (is_custom(lk)) {
-			if (custom_pressed_keys >= MAX_CUSTOM_KEYPRESSES) {
+		if (is_custom(lk))
+		{
+			if (custom_pressed_keys >= MAX_CUSTOM_KEYPRESSES)
+			{
 				continue;
 			}
 			custom_pressed_key_ids[custom_pressed_keys] = k_id;

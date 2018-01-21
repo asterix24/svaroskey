@@ -191,7 +191,8 @@ int main(void)
 	proc_new(scan_proc, NULL, KERN_MINSTACKSIZE, NULL);
 	proc_new(feature_proc, NULL, 0x400, NULL);
 
-	while (1) {
+	while (1)
+	{
 		timer_delay(5000);
 	}
 }
