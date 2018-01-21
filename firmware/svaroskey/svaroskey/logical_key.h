@@ -10,10 +10,7 @@ typedef struct
 	uint8_t modifiers;
 } LogicalKey;
 
-static LogicalKey noop_lk = {
-	.scancode = KEY_NOOP,
-	.modifiers = 0
-};
+extern LogicalKey noop_lk;
 
 const LogicalKey* get_logical_key(size_t layer, key_id_t key_id);
 bool is_modifier(const LogicalKey* lk);

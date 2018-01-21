@@ -7,6 +7,8 @@
 
 typedef LogicalKey** layout_layer_t;
 
+LogicalKey noop_lk = {.scancode = KEY_NOOP, .modifiers = 0};
+
 LogicalKey* layer0[LAYOUT_SIZE] = {
 #if (CONFIG_LAYOUT_REVISION == 0)
 	/* Row 1 */
