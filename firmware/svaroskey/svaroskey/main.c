@@ -171,7 +171,9 @@ static void NORETURN scan_proc(void)
 	/* Periodically scan the keyboard */
 	while (1)
 	{
-		keymap_scan();
+		KeymapScanResult result = keymap_scan();
+		size_t layer = keyfetch_algo(result.num_custom_keys_pressed);
+		generate_usb_report(layer, result.num_std_keys_pressed);
 
 		if ((event = get_usb_report()) != NULL)
 			usbkbd_sendEvent(event);

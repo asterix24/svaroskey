@@ -50,7 +50,7 @@ static void clean_report(void)
 	}
 }
 
-static void generate_usb_report(size_t layer, size_t num_std_pressed)
+void generate_usb_report(size_t layer, size_t num_std_pressed)
 {
 	size_t i = 0;
 	size_t num_key_codes = 0;
@@ -164,16 +164,15 @@ static KeySubstitutionResult substitute_custom_keys(size_t num_custom_keys) {
 	return (KeySubstitutionResult){0, num_custom_keys};
 }
 
-static void keyfetch_algo(size_t num_std_keys, size_t num_custom_keys) {
+size_t keyfetch_algo(size_t num_custom_keys) {
 	KeySubstitutionResult result = substitute_custom_keys(num_custom_keys);
-	size_t layer = calculate_layer(
+	return calculate_layer(
 		result.num_substituted_keys,
 		result.remaining_custom_keys
 	);
-	generate_usb_report(layer, num_std_keys);
 }
 
-void keymap_scan(void)
+KeymapScanResult keymap_scan(void)
 {
 	report_ready = false;
 	clean_report();
@@ -202,7 +201,7 @@ void keymap_scan(void)
 		std_pressed_keys++;
 	}
 
-	keyfetch_algo(std_pressed_keys, custom_pressed_keys);
+	return (KeymapScanResult){std_pressed_keys, custom_pressed_keys};
 }
 
 void keymap_init(void)
