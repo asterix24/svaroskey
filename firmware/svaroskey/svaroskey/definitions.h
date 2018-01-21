@@ -21,4 +21,6 @@
 #define KEYBOARD_PORT_C 2
 #define KEYBOARD_PORT_D 3
 
+#define NUM_KEYHASH_BUCKETS 4
+
 #endif // KBD_DEFINITIONS_H

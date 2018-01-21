@@ -12,6 +12,7 @@ svaroskey_USER_CSRC = \
 	$(svaroskey_SRC_PATH)/main.c \
 	$(svaroskey_SRC_PATH)/globals.c \
 	$(svaroskey_SRC_PATH)/keymap.c \
+	$(svaroskey_SRC_PATH)/keyhash.c \
 	$(svaroskey_SRC_PATH)/logical_key.c \
 	$(svaroskey_SRC_PATH)/physical_key.c \
 	common/usbfeature.c \

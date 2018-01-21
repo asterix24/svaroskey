@@ -5,6 +5,7 @@
 #include "definitions.h"
 #include "globals.h"
 #include "keycodes.h"
+#include "keyhash.h"
 #include "logical_key.h"
 
 #include <cfg/debug.h>
@@ -190,6 +191,7 @@ KeymapScanResult keymap_scan(void)
 {
 	report_ready = false;
 	clean_report();
+	clear_key_hash(&pressed_keys_hash);
 
 	size_t std_pressed_keys = 0;
 	size_t custom_pressed_keys = 0;
