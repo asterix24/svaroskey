@@ -1,14 +1,12 @@
 #ifndef SVAROSKEY_GLOBALS_H
 #define SVAROSKEY_GLOBALS_H
 
-#include "keyhash.h"
 #include "logical_key.h"
 #include "typedefs.h"
 
 extern key_id_t std_pressed_key_ids[];
 extern key_id_t custom_pressed_key_ids[];
 extern LogicalKey* substituted_keys[];
-extern KeyHash pressed_keys_hash;
 
 /* The reason the `substituted_keys` array is an array of LogicalKey pointers
  * rather than an array of key ids is that a key id identifies a single

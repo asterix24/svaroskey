@@ -22,10 +22,9 @@
 #include "definitions.h"
 #include "typedefs.h"
 
-typedef struct {
-	uint32_t buckets[NUM_KEYHASH_BUCKETS];
-} KeyHash;
+typedef struct KeyHash KeyHash;
 
+KeyHash* fetch_key_hash(void);
 void clear_key_hash(KeyHash* kh);
 void set_pressed(KeyHash* kh, key_id_t k_id);
 void set_released(KeyHash* kh, key_id_t k_id);

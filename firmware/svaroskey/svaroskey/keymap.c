@@ -191,7 +191,7 @@ KeymapScanResult keymap_scan(void)
 {
 	report_ready = false;
 	clean_report();
-	clear_key_hash(&pressed_keys_hash);
+	clear_key_hash(fetch_key_hash());
 
 	size_t std_pressed_keys = 0;
 	size_t custom_pressed_keys = 0;

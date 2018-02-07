@@ -1,10 +1,20 @@
 #include "keyhash.h"
 
+struct KeyHash {
+	uint32_t buckets[NUM_KEYHASH_BUCKETS];
+};
+
 typedef struct
 {
 	uint8_t bucket;
 	uint8_t slot;
 } BucketMappingResult;
+
+static KeyHash _key_hash;
+
+KeyHash* fetch_key_hash() {
+    return &_key_hash;
+}
 
 void clear_key_hash(KeyHash* kh)
 {
