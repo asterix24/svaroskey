@@ -6,7 +6,7 @@
 
 typedef struct
 {
-	scancode_t scancode;
+	usage_code_t usage_code;
 	uint8_t modifiers;
 } LogicalKey;
 

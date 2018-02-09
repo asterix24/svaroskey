@@ -3,7 +3,7 @@
 
 #include <cpu/types.h>
 
-typedef uint16_t scancode_t;
+typedef uint16_t usage_code_t;
 typedef uint8_t key_id_t;
 
 #endif

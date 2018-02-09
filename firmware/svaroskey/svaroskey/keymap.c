@@ -78,7 +78,7 @@ void generate_usb_report(size_t layer, size_t n_std_keys)
 			continue;
 		}
 
-		if (lk->scancode == KEY_NOOP)
+		if (lk->usage_code == KEY_NOOP)
 		{
 			// do not fill the usb report up with useless key codes
 			continue;
@@ -87,7 +87,7 @@ void generate_usb_report(size_t layer, size_t n_std_keys)
 		if (num_key_codes < 6)
 		{
 			usb_report.mods |= lk->modifiers;
-			usb_report.codes[num_key_codes] = lk->scancode;
+			usb_report.codes[num_key_codes] = lk->usage_code;
 			num_key_codes++;
 		}
 	}
@@ -95,7 +95,7 @@ void generate_usb_report(size_t layer, size_t n_std_keys)
 	report_ready = true;
 }
 
-static LayerFetchResult layer_value(scancode_t sc)
+static LayerFetchResult layer_value(usage_code_t sc)
 {
 	switch(sc)
 	{
@@ -127,7 +127,7 @@ static size_t calculate_layer(size_t n_sub_keys, size_t n_cus_keys)
 	for (i = 0; i < n_sub_keys; i++)
 	{
 		const LogicalKey* lk = substituted_keys[i];
-		LayerFetchResult r = layer_value(lk->scancode);
+		LayerFetchResult r = layer_value(lk->usage_code);
 
 		if (r.valid)
 		{
@@ -140,7 +140,7 @@ static size_t calculate_layer(size_t n_sub_keys, size_t n_cus_keys)
 		const LogicalKey* lk = get_logical_key(
 			0, custom_pressed_key_ids[i]
 		);
-		LayerFetchResult r = layer_value(lk->scancode);
+		LayerFetchResult r = layer_value(lk->usage_code);
 		if (r.valid)
 		{
 			return r.layer;
@@ -164,16 +164,16 @@ static KeySubstitutionResult substitute_custom_keys(size_t n_cus_keys)
 
 	if (
 		(
-			lk1->scancode == KEY_LAYER_1 &&
-			lk2->scancode == KEY_LAYER_2
+			lk1->usage_code == KEY_LAYER_1 &&
+			lk2->usage_code == KEY_LAYER_2
 		)
 		|| (
-			lk1->scancode == KEY_LAYER_2 &&
-			lk2->scancode == KEY_LAYER_1
+			lk1->usage_code == KEY_LAYER_2 &&
+			lk2->usage_code == KEY_LAYER_1
 		)
 	)
 	{
-		substituted_keys[0]->scancode = KEY_LAYER_3;
+		substituted_keys[0]->usage_code = KEY_LAYER_3;
 		substituted_keys[0]->modifiers = 0;
 		return (KeySubstitutionResult){1, 0};
 	}

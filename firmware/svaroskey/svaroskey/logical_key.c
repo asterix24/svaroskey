@@ -3,11 +3,11 @@
 #include "definitions.h"
 #include "keycodes.h"
 
-#define LKP(sc, mods) &(LogicalKey){.scancode = (sc), .modifiers = (mods)}
+#define LKP(uc, mods) &(LogicalKey){.usage_code = (uc), .modifiers = (mods)}
 
 typedef LogicalKey** layout_layer_t;
 
-LogicalKey noop_lk = {.scancode = KEY_NOOP, .modifiers = 0};
+LogicalKey noop_lk = {.usage_code = KEY_NOOP, .modifiers = 0};
 
 LogicalKey* layer0[LAYOUT_SIZE] = {
 #if (CONFIG_LAYOUT_REVISION == 0)
@@ -332,12 +332,12 @@ const LogicalKey* get_logical_key(size_t layer, key_id_t key_id)
 
 bool is_modifier(const LogicalKey* lk)
 {
-	return lk->scancode >= KEY_LEFTCONTROL
-	       && lk->scancode <= KEY_RIGHTGUI;
+	return lk->usage_code >= KEY_LEFTCONTROL
+	       && lk->usage_code <= KEY_RIGHTGUI;
 }
 
 bool is_custom(const LogicalKey* lk)
 {
-	return lk->scancode >= KEY_CUSTOM_START
-	       && lk->scancode <= KEY_CUSTOM_END;
+	return lk->usage_code >= KEY_CUSTOM_START
+	       && lk->usage_code <= KEY_CUSTOM_END;
 }
