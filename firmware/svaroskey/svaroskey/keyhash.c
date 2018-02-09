@@ -27,7 +27,7 @@ void clear_key_hash(KeyHash* kh)
 
 static BucketMappingResult map_key_id(key_id_t k_id)
 {
-	/* Suppose we need to map the 73rd key. k_id is 74 because ids are
+	/* Suppose we need to map the 74th key. k_id is 73 because ids are
 	 * 0-based indexes.
 	 * The relevant location in the key hash is the 3rd bucket, 10th bit.
 	 * As a visual aid, a visualization of the 4 buffers follows.
@@ -40,7 +40,7 @@ static BucketMappingResult map_key_id(key_id_t k_id)
 	 * 64          bucket 2          95 96          bucket 3         127
 	 *
 	 * The `x` in the above visualization represents the bit for the key
-	 * with id 74
+	 * with id 73
 	 *
 	 * It's easy to see that for ids in the range 0..31 a division by 32,
 	 * which gets truncated due to how integer division works in c, will
@@ -48,17 +48,16 @@ static BucketMappingResult map_key_id(key_id_t k_id)
 	 * the bit for that id.
 	 *
 	 * The bit itself is the offset starting from the first element of the
-	 * bucket in which the bit itself is found.
+	 * bucket in which the bit itself is found. Mathematically, that's the
+	 * modulo operation.
 	 *
-	 * Returning to our example for id 74 we have that the bit is in bucket
-	 * with index (74 / 32) = 2, and the bit itself is in position
-	 * 74 - (32 * 2) = 74 - 64 = 10.
+	 * Returning to our example for id 73 we have that the bit is in bucket
+	 * with index (73 / 32) = 2, and the bit itself is in position
+	 * 73 % 32 = 9.
 	 */
 	uint8_t bucket = k_id / 32;
-	return (BucketMappingResult){
-		bucket,
-		k_id - (32 * bucket)
-	};
+	uint8_t slot = k_id % 32;
+	return (BucketMappingResult){ bucket, slot };
 }
 
 void set_pressed(KeyHash* kh, key_id_t k_id)
