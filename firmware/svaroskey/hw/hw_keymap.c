@@ -44,21 +44,22 @@ void keyboard_init(void) {
 	stm32_gpioPinWrite(KEY_ROW_GPIO_BASE, KEY_ROW_PINS, false);
 }
 
-bool is_key_down(const PhysicalKey* pk) {
+bool is_key_down(uint8_t r_port, uint8_t r_pin, uint8_t c_port, uint8_t c_pin)
+{
 	struct stm32_gpio *wPort, *rPort;
 	int wPin, rPin;
 	bool ret;
 
 #ifdef CONFIG_INVERT_LAYOUT
-	wPort = port_mappings[pk->col_port];
-	rPort = port_mappings[pk->row_port];
-	wPin = BV(pk->col_pin);
-	rPin = BV(pk->row_pin);
+	wPort = port_mappings[c_port];
+	rPort = port_mappings[r_port];
+	wPin = BV(c_pin);
+	rPin = BV(r_pin);
 #else
-	wPort = port_mappings[pk->row_port];
-	rPort = port_mappings[pk->col_port];
-	wPin = BV(pk->row_pin);
-	rPin = BV(pk->col_pin);
+	wPort = port_mappings[r_port];
+	rPort = port_mappings[c_port];
+	wPin = BV(r_pin);
+	rPin = BV(c_pin);
 #endif
 
 	/* Select row */

@@ -2,6 +2,8 @@
 
 #include "definitions.h"
 
+#include "hw/hw_keymap.h"
+
 #if !defined CONFIG_MAPPING_REVISION
 #error CONFIG_MAPPING_REVISION is not defined.
 #elif (CONFIG_MAPPING_REVISION > CONFIG_MAPPING_LATEST_REVISION)
@@ -13,7 +15,23 @@
 #define KPC KEYBOARD_PORT_C
 #define KPD KEYBOARD_PORT_D
 
-PhysicalKey keyboard_keys[LAYOUT_SIZE] = {
+struct PhysicalKey
+{
+	uint8_t row_port;
+	uint8_t row_pin;
+	uint8_t col_port;
+	uint8_t col_pin;
+};
+
+struct PressedPhysicalKeys
+{
+	key_id_t pressed_keys[LAYOUT_SIZE];
+	uint8_t num_pressed_keys;
+};
+
+static struct PressedPhysicalKeys physical_keys;
+
+struct PhysicalKey keyboard_keys[LAYOUT_SIZE] = {
 #if (CONFIG_MAPPING_REVISION == 0)
 	/* #0 - #11 */
 	{ KPB, 0,  KPC, 0  }, { KPB, 1,  KPC, 0  }, { KPB, 3,  KPC, 0  },
@@ -115,7 +133,33 @@ PhysicalKey keyboard_keys[LAYOUT_SIZE] = {
 #endif
 };
 
-const PhysicalKey* get_physical_key(key_id_t key_id)
+const struct PressedPhysicalKeys* get_physical_keys()
 {
-	return &keyboard_keys[key_id];
+	key_id_t k_id = 0;
+	uint8_t num_pressed_keys = 0;
+
+	for (k_id = 0; k_id < LAYOUT_SIZE; k_id++)
+	{
+		struct PhysicalKey pk = keyboard_keys[k_id];
+		if (!is_key_down(pk.row_port, pk.row_pin, pk.col_port, pk.col_pin))
+		{
+			continue;
+		}
+
+		physical_keys.pressed_keys[num_pressed_keys] = k_id;
+	}
+
+	physical_keys.num_pressed_keys = num_pressed_keys;
+	return &physical_keys;
+}
+
+uint8_t get_num_keys(const struct PressedPhysicalKeys* pkeys)
+{
+	return pkeys->num_pressed_keys;
+}
+
+key_id_t get_key_id(uint8_t key, const struct PressedPhysicalKeys* pkeys)
+{
+	// TODO bounds checking
+	return pkeys->pressed_keys[key];
 }

@@ -3,13 +3,8 @@
 
 #include "typedefs.h"
 
-typedef struct
-{
-	uint8_t row_port;
-	uint8_t row_pin;
-	uint8_t col_port;
-	uint8_t col_pin;
-} PhysicalKey;
-
-const PhysicalKey* get_physical_key(key_id_t key_id);
+struct PressedPhysicalKeys;
+const struct PressedPhysicalKeys* get_physical_keys(void);
+uint8_t get_num_keys(const struct PressedPhysicalKeys* pkeys);
+key_id_t get_key_id(uint8_t key, const struct PressedPhysicalKeys* pkeys);
 #endif

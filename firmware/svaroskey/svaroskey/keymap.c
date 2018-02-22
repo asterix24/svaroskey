@@ -16,6 +16,12 @@
 
 typedef struct
 {
+	size_t n_std_keys;
+	size_t n_cus_keys;
+} KeymapScanResult;
+
+typedef struct
+{
 	size_t n_sub_keys;
 	size_t n_cus_keys;
 } KeySubstitutionResult;
@@ -26,14 +32,10 @@ typedef struct
 	size_t layer;
 } LayerFetchResult;
 
-static UsbKbdEvent usb_report = {
-	.mods = 0,
-	.codes = { 0 }
-};
-
+static UsbKbdEvent usb_report;
 static bool report_ready = false;
 
-UsbKbdEvent* get_usb_report()
+static UsbKbdEvent* get_usb_report(void)
 {
 	if (report_ready)
 	{
@@ -52,7 +54,7 @@ static void clean_report(void)
 	}
 }
 
-void generate_usb_report(size_t layer, size_t n_std_keys)
+static void generate_usb_report(size_t layer, size_t n_std_keys)
 {
 	size_t i = 0;
 	size_t num_key_codes = 0;
@@ -181,28 +183,28 @@ static KeySubstitutionResult substitute_custom_keys(size_t n_cus_keys)
 	return (KeySubstitutionResult){0, n_cus_keys};
 }
 
-size_t keyfetch_algo(size_t n_cus_keys)
+static size_t keyfetch_algo(size_t n_cus_keys)
 {
 	KeySubstitutionResult r = substitute_custom_keys(n_cus_keys);
 	return calculate_layer(r.n_sub_keys, r.n_cus_keys);
 }
 
-KeymapScanResult keymap_scan(void)
+static KeymapScanResult keymap_scan(const struct PressedPhysicalKeys* pkeys)
 {
 	report_ready = false;
 	clean_report();
-	clear_key_hash(fetch_key_hash());
+
+	KeyHash* kh = fetch_key_hash();
+	clear_key_hash(kh);
 
 	size_t std_pressed_keys = 0;
 	size_t custom_pressed_keys = 0;
-	key_id_t k_id = 0;
+	uint8_t n = 0;
 
-	for (k_id = 0; k_id < LAYOUT_SIZE; k_id++)
+	for (n = 0; n < get_num_keys(pkeys); n++)
 	{
-		const PhysicalKey* pk = get_physical_key(k_id);
-
-		if (!is_key_down(pk))
-			continue;
+		key_id_t k_id = get_key_id(n, pkeys);
+		set_pressed(kh, k_id);
 
 		const LogicalKey* lk = get_logical_key(0, k_id);
 		if (is_custom(lk))
@@ -221,6 +223,14 @@ KeymapScanResult keymap_scan(void)
 	}
 
 	return (KeymapScanResult){std_pressed_keys, custom_pressed_keys};
+}
+
+UsbKbdEvent* calculate_usb_report(const struct PressedPhysicalKeys* pkeys)
+{
+		KeymapScanResult r = keymap_scan(pkeys);
+		size_t layer = keyfetch_algo(r.n_cus_keys);
+		generate_usb_report(layer, r.n_std_keys);
+		return get_usb_report();
 }
 
 void keymap_init(void)

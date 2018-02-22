@@ -56,7 +56,6 @@
  */
 
 #include "keymap.h"
-#include "hw/hw_keymap.h"
 #include "hw/hw_boot.h"
 
 
@@ -166,17 +165,16 @@ static void NORETURN feature_proc(void)
 
 static void NORETURN scan_proc(void)
 {
-	UsbKbdEvent *event;
-
 	/* Periodically scan the keyboard */
 	while (1)
 	{
-		KeymapScanResult r = keymap_scan();
-		size_t layer = keyfetch_algo(r.n_cus_keys);
-		generate_usb_report(layer, r.n_std_keys);
+		const struct PressedPhysicalKeys* pkeys = get_physical_keys();
+		UsbKbdEvent* usb_report = calculate_usb_report(pkeys);
 
-		if ((event = get_usb_report()) != NULL)
-			usbkbd_sendEvent(event);
+		if (usb_report != NULL)
+		{
+			usbkbd_sendEvent(usb_report);
+		}
 
 		timer_delay(1);
 	}
