@@ -79,24 +79,13 @@
 #include <drv/flash.h>
 
 #include <io/kfile_block.h>
+#include <io/stm32.h>
 
-#include <kern/proc.h>
 
-#define MAX_BRIGHTNESS 100
-#define NUM_LED_ROWS   8
-#define NUM_LED_COLS   8
-#define NUM_LEDS       (NUM_LED_COLS * NUM_LED_ROWS)
-
-static Sipo sipo;
-static Eeprom eep;
-static I2c i2c;
-static Flash internal_flash;
-static KFileBlock flash;
-
-static UsbFeatureCtx usb_feature_ctx;
-static UsbFeatureMsg usb_feature_msg;
-
-static uint8_t leds_off[3]  = {0x00, 0x00, 0x00};
+//static Sipo sipo;
+//static Eeprom eep;
+//static I2c i2c;
+//static uint8_t leds_off[3]  = {0x00, 0x00, 0x00};
 
 static void hw_init(void)
 {
@@ -107,6 +96,72 @@ static void hw_init(void)
 	AFIO = (reg32_t *)(AFIO_BASE + 4);
 	*AFIO &= ~(0x07000000);
 	*AFIO |=  (0x04000000);
+}
+
+#define EINK_BASE ((struct stm32_gpio *)GPIOA_BASE)
+#define EINK_BUSY_PIN  BV(0)  // PA0
+#define EINK_RST_PIN   BV(1)  // PA1
+#define EINK_DC_PIN    BV(4)  // PA4
+#define EINK_CS_PIN    BV(5)  // PA5
+#define EINK_D0_PIN    BV(6)  // PA6 SCLK
+#define EINK_D1_PIN    BV(7)  // PA7 SDIN
+
+#define EINK_SCK_ACTIVE()   do { stm32_gpioPinWrite(EINK_BASE, EINK_D0_PIN, true);  } while(0)
+#define EINK_SCK_INACTIVE() do { stm32_gpioPinWrite(EINK_BASE, EINK_D0_PIN, false); } while(0)
+
+#define EINK_MOSI_HIGH()    do { stm32_gpioPinWrite(EINK_BASE, EINK_D1_PIN, true);  } while(0)
+#define EINK_MOSI_LOW()     do { stm32_gpioPinWrite(EINK_BASE, EINK_D1_PIN, false); } while(0)
+
+#define EINK_CS_ACTIVE()    do { stm32_gpioPinWrite(EINK_BASE, EINK_CS_PIN, true);  } while(0)
+#define EINK_CS_INACTIVE()  do { stm32_gpioPinWrite(EINK_BASE, EINK_CS_PIN, false); } while(0)
+
+#define EINK_DC_ACTIVE()    do { stm32_gpioPinWrite(EINK_BASE, EINK_DC_PIN, true);  } while(0)
+#define EINK_DC_INACTIVE()  do { stm32_gpioPinWrite(EINK_BASE, EINK_DC_PIN, false); } while(0)
+
+#define EINK_IS_BUSY()      (stm32_gpioPinRead(EINK_BASE, EINK_BUSY_PIN))
+
+
+static void eink_send(uint8_t data, bool cmd)
+{
+	uint8_t shift = 0x80; // MSB (LSB = 1)
+	//uint8_t shift = 1; // LSB
+	ATOMIC(
+		if (cmd) {
+			EINK_DC_ACTIVE();
+		}
+
+		for (int i = 0; i < 8; i++)
+		{
+		/* Shift the i-th bit to MOSI */
+		if (data & shift)
+			EINK_MOSI_HIGH();
+		else
+			EINK_MOSI_LOW();
+
+			/* Assert clock */
+			EINK_SCK_ACTIVE();
+			timer_udelay(50);
+			/* De-assert clock */
+			EINK_SCK_INACTIVE();
+			timer_udelay(50);
+
+			shift >>= 1; // MSB (LSB <<)
+			//shift <<= 1; // LSB
+		}
+
+		if (cmd) {
+			EINK_DC_INACTIVE();
+		}
+	);
+}
+
+static void eink_write(uint8_t cmd, uint8_t *data, size_t len)
+{
+	EINK_CS_ACTIVE();
+	eink_send(cmd, true);
+	while (len--)
+		eink_send(*data++, false);
+	EINK_CS_INACTIVE();
 }
 
 static void init(void)
@@ -124,72 +179,92 @@ static void init(void)
 
 	/* Initialize system timer */
 	timer_init();
-
 	/* Kernel initialization */
-	proc_init();
+//	proc_init();
 
 	/* Initialize SIPO */
-	sipo_init(&sipo, 0, SIPO_DATAORDER_LSB);
-	kfile_write(&sipo.fd, leds_off, sizeof(leds_off));
+	//sipo_init(&sipo, 0, SIPO_DATAORDER_LSB);
+	//kfile_write(&sipo.fd, leds_off, sizeof(leds_off));
 
-	flash_init(&internal_flash, FLASH_WRITE_ONCE);
-	// trim flash to avoid problems with kfile_block
-	kprintf("Trim start: %d, blocks: %ld\n", TRIM_START, internal_flash.blk.blk_cnt - TRIM_START);
-	kblock_trim(&internal_flash.blk, TRIM_START, internal_flash.blk.blk_cnt - TRIM_START);
-	kfileblock_init(&flash, &internal_flash.blk);
 
-	/* init usb feature to run custom cmd. */
-	usbfeature_init(&usb_feature_ctx, &usb_feature_msg, &flash.fd);
-	usbfeature_setStatus(&usb_feature_ctx, FEAT_ST_APP);
+	RCC->APB2ENR |= RCC_APB2_GPIOA;
+	stm32_gpioPinConfig(EINK_BASE, EINK_BUSY_PIN, GPIO_MODE_IPU, GPIO_SPEED_50MHZ);
+	stm32_gpioPinConfig(EINK_BASE, EINK_DC_PIN | EINK_CS_PIN | EINK_D0_PIN | \
+			EINK_D1_PIN | EINK_RST_PIN, GPIO_MODE_OUT_PP, GPIO_SPEED_50MHZ);
+	stm32_gpioPinWrite(EINK_BASE, EINK_DC_PIN | EINK_CS_PIN | EINK_D0_PIN | \
+			EINK_D1_PIN | EINK_RST_PIN, false);
 
-	/* Initialize the USB keyboard device */
-	usbkbd_eventRegister(); // For custom feature
-	usbkbd_init(0);
-
-	/* Initialize keymap */
-	keymap_init();
-
-	/* Initialize EEPROM */
-	i2c_init(&i2c, I2C_BITBANG0, CONFIG_I2C_FREQ);
-	eeprom_init(&eep, &i2c, EEPROM_24XX128, 0x00, false);
-
+	kprintf("start up seq\n");
+	timer_delay(50);
+	stm32_gpioPinWrite(EINK_BASE, EINK_RST_PIN, true);
+	kprintf("start up seq\n");
+	timer_delay(1);
+	stm32_gpioPinWrite(EINK_BASE, EINK_CS_PIN, true);
+	kprintf("start up seq\n");
 }
 
-static void NORETURN feature_proc(void)
-{
-	/* Wait feature command from usb */
-	while (1)
-	{
-		usbfeature_poll(&usb_feature_ctx);
-	}
-}
 
-static void NORETURN scan_proc(void)
-{
-	UsbKbdEvent *event;
+struct Cmd {
+	uint8_t cmd;
+	uint8_t data[3];
+	size_t len;
+};
 
-	/* Periodically scan the keyboard */
-	while (1)
-	{
-		keymap_scan();
+static struct Cmd init_cmd[] = {
+	{  0x1,  {0xcf, 0x00, 0x00}, 2},
+	{  0xf,  {0x00, 0x00, 0x00}, 1},
+	{  0x11, {0x03, 0x00, 0x00}, 1},
+	{  0x44, {0x00, 0x0d, 0x00}, 2},
+	{  0x45, {0x00, 0xcf, 0x00}, 2},
+	{  0x4E, {0x00, 0x00, 0x00}, 1},
+	{  0x4F, {0x00, 0x00, 0x00}, 1},
 
-		if ((event = keymap_get_next_code()) != NULL)
-			usbkbd_sendEvent(event);
+	{  0, {0x00, 0x00, 0x00}, 0},
+};
 
-		timer_delay(1);
-	}
-}
+static struct Cmd update_cmd[] = {
+	{  0x3c, {0x80, 0x00, 0x00}, 1},
+	{  0x03, {0x10, 0x0a, 0x00}, 2},
+	{  0x05, {0x00, 0x00, 0x00}, 1},
+	{  0x75, {0x00, 0x00, 0x00}, 3},
+	{  0x1A, {0x00, 0x19, 0x00}, 2},
+	{  0x22, {0xf7, 0x00, 0x00}, 1},
+	{  0x20, {0x00, 0x00, 0x00}, 0},
+
+	{  0, {0x00, 0x00, 0x00}, 0},
+};
+
+static uint8_t buff[2912];
 
 int main(void)
 {
 	/* Hardware initialization */
 	init();
 
-	/* Sample process */
-	proc_new(scan_proc, NULL, KERN_MINSTACKSIZE, NULL);
-	proc_new(feature_proc, NULL, 0x400, NULL);
+
+
+	memset(buff, 0xAA, sizeof(buff));
 
 	while (1) {
+
+		kprintf("Wait display\n");
+		while(EINK_IS_BUSY())
+			cpu_relax();
+
+		kprintf("init\n");
+		// init
+		for (int i = 0; init_cmd[i].cmd != 0 && init_cmd[i].len !=0; i++)
+			eink_write(init_cmd[i].cmd, init_cmd[i].data, init_cmd[i].len);
+
+		// Data
+		eink_write(0x24, buff, sizeof(buff));
+
+		// update
+		for (int i = 0; update_cmd[i].cmd != 0 && update_cmd[i].len !=0; i++)
+			eink_write(update_cmd[i].cmd, update_cmd[i].data, update_cmd[i].len);
+
+		kprintf("update\n");
+
 		timer_delay(5000);
 	}
 }

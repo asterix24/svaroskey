@@ -10,12 +10,6 @@ svaroskey_PROGRAMMER_PORT = /dev/tty.usbserial-AI04D7T3
 # Files included by the user.
 svaroskey_USER_CSRC = \
 	$(svaroskey_SRC_PATH)/main.c \
-	$(svaroskey_SRC_PATH)/keymap.c \
-	$(svaroskey_SRC_PATH)/layouts.c \
-	$(svaroskey_SRC_PATH)/mappings.c \
-	common/usbfeature.c \
-	common/crc32.c \
-	$(svaroskey_HW_PATH)/hw/hw_keymap.c \
 	#
 
 # Files included by the user.
@@ -36,7 +30,7 @@ svaroskey_USER_ASRC = \
 
 # Flags included by the user.
 svaroskey_USER_LDFLAGS = \
-	-Wl,-T svaroskey/stm32f103rb_rom.ld \
+	#-Wl,-T svaroskey/stm32f103rb_rom.ld \
 	#
 
 # Flags included by the user.
