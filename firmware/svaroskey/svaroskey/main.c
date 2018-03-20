@@ -126,11 +126,6 @@ static void eink_send(uint8_t data, bool cmd)
 	uint8_t shift = 0x80; // MSB (LSB = 1)
 	//uint8_t shift = 1; // LSB
 	ATOMIC(
-		EINK_DC_INACTIVE();
-		if (cmd) {
-			EINK_DC_ACTIVE();
-		}
-
 		for (int i = 0; i < 8; i++)
 		{
 		/* Shift the i-th bit to MOSI */
@@ -141,27 +136,35 @@ static void eink_send(uint8_t data, bool cmd)
 
 			/* Assert clock */
 			EINK_SCK_ACTIVE();
-			timer_udelay(1);
+			timer_udelay(2);
 			/* De-assert clock */
 			EINK_SCK_INACTIVE();
-			timer_udelay(1);
+			timer_udelay(2);
 
 			shift >>= 1; // MSB (LSB <<)
 			//shift <<= 1; // LSB
 		}
-		EINK_DC_INACTIVE();
-		timer_udelay(2);
 	);
 }
 
 static void eink_write(uint8_t cmd, uint8_t *data, size_t len)
 {
 	EINK_CS_ACTIVE();
+	timer_udelay(1);
+	EINK_DC_ACTIVE();
 	eink_send(cmd, true);
-	while (len--)
-		eink_send(*data++, false);
+	EINK_DC_INACTIVE();
+	timer_udelay(1);
+
+
+	if (len > 0)
+		while (len--)
+			eink_send(*data++, false);
+
 	EINK_CS_INACTIVE();
+
 	timer_udelay(2);
+
 }
 
 static void init(void)
@@ -193,7 +196,7 @@ static void init(void)
 			EINK_D1_PIN | EINK_RST_PIN, GPIO_MODE_OUT_PP, GPIO_SPEED_50MHZ);
 
 	stm32_gpioPinWrite(EINK_BASE, EINK_DC_PIN | EINK_D0_PIN | \
-			EINK_D1_PIN, true);
+			EINK_D1_PIN, false);
 	stm32_gpioPinWrite(EINK_BASE, EINK_RST_PIN | EINK_CS_PIN, false);
 
 	kprintf("start up seq\n");
@@ -203,8 +206,6 @@ static void init(void)
 	timer_delay(1);
 	stm32_gpioPinWrite(EINK_BASE, EINK_CS_PIN, true);
 	kprintf("start up seq\n");
-	EINK_CS_INACTIVE();
-	EINK_DC_INACTIVE();
 }
 
 
@@ -214,7 +215,7 @@ struct Cmd {
 	size_t len;
 };
 
-static struct Cmd init_cmd[7] = {
+static struct Cmd init_cmd[] = {
 	{  0x1,  {0xcf, 0x00, 0x00}, 2},
 	{  0xf,  {0x00, 0x00, 0x00}, 1},
 	{  0x11, {0x03, 0x00, 0x00}, 1},
@@ -222,16 +223,22 @@ static struct Cmd init_cmd[7] = {
 	{  0x45, {0x00, 0xcf, 0x00}, 2},
 	{  0x4E, {0x00, 0x00, 0x00}, 1},
 	{  0x4F, {0x00, 0x00, 0x00}, 1},
+
+
+	{  0,    {0x00, 0x00, 0x00}, 0}
 };
 
-static struct Cmd update_cmd[7] = {
+static struct Cmd update_cmd[] = {
 	{  0x3c, {0x80, 0x00, 0x00}, 1},
 	{  0x03, {0x10, 0x0a, 0x00}, 2},
 	{  0x05, {0x00, 0x00, 0x00}, 1},
 	{  0x75, {0x00, 0x00, 0x00}, 3},
-	{  0x1A, {0x00, 0x19, 0x00}, 2},
+
+	{  0x1A, {0x19, 0x00, 0x00}, 2},
 	{  0x22, {0xf7, 0x00, 0x00}, 1},
 	{  0x20, {0x00, 0x00, 0x00}, 0},
+
+	{  0,    {0x00, 0x00, 0x00}, 0}
 };
 
 static uint8_t buff[2912];
@@ -241,37 +248,47 @@ int main(void)
 	/* Hardware initialization */
 	init();
 
-
-
-	memset(buff, 0xff, sizeof(buff));
-
+	bool flag = true;
 	while (1) {
-		//eink_write(0xaa, b, 2);
-		//timer_delay(1);
+		if (flag)
+			memset(buff, 0xFF, sizeof(buff));
+		else
+			memset(buff, 0x00, sizeof(buff));
 
-		#if 1
+		flag = !flag;
+
 		kprintf("Wait display\n");
 		while(EINK_IS_BUSY())
 			cpu_relax();
 
 		kprintf("init\n");
-		timer_delay(1);
 		// init
-		for (size_t i = 0; i < 7; i++)
-			eink_write(init_cmd[i].cmd, init_cmd[i].data, init_cmd[i].len);
+		for (size_t i = 0; ; i++)
+		{
+			if (init_cmd[i].cmd == 0 && init_cmd[i].len == 0)
+				break;
 
-		timer_delay(1);
+			eink_write(init_cmd[i].cmd, init_cmd[i].data, init_cmd[i].len);
+		}
+
 		// Data
 		eink_write(0x24, buff, sizeof(buff));
 
-		// update
-		for (size_t i = 0; i < 7; i++)
-			eink_write(update_cmd[i].cmd, update_cmd[i].data, update_cmd[i].len);
+		while(EINK_IS_BUSY())
+			cpu_relax();
 
-		timer_delay(1);
+
+		// update
+		for (size_t i = 0; ; i++)
+		{
+			if (update_cmd[i].cmd == 0 && update_cmd[i].len == 0)
+				break;
+
+			eink_write(update_cmd[i].cmd, update_cmd[i].data, update_cmd[i].len);
+		}
+
 		kprintf("update\n");
 
-		timer_delay(1000);
-		#endif
+		timer_delay(5000);
 	}
 }
