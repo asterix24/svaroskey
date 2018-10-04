@@ -8,3 +8,5 @@ ProjectPath=petroskey\petroskey.PrjPcb
 ProjectPath=controller\controller.PrjPcb
 [Project4]
 ProjectPath=panel\panel.PrjPcb
+[Project5]
+ProjectPath=controller-light\controller-light.PrjPcb
