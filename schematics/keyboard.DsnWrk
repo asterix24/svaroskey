@@ -10,3 +10,5 @@ ProjectPath=controller\controller.PrjPcb
 ProjectPath=panel\panel.PrjPcb
 [Project5]
 ProjectPath=controller-light\controller-light.PrjPcb
+[Project6]
+ProjectPath=..\..\..\..\Downloads\ALTIUM-WR-PHD_PIN_HEADER-rev18b\ALTIUM-WR-PHD_PIN_HEADER-rev18b.LibPkg
