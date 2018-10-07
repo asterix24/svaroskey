@@ -1,0 +1,9 @@
+DRC Rules Export File for PCB: C:\Users\asterix\Documents\github\svaroskey\schematics\controller-light\controller-light.PcbDoc
+RuleKind=Clearance|RuleName=Clearance_usb|Scope=Board|Minimum=9.84
+RuleKind=Clearance|RuleName=Clearance_shld|Scope=Board|Minimum=9.84
+RuleKind=SolderMaskExpansion|RuleName=SolderMaskExpansion_via|Scope=Board|Minimum=-393.70
+RuleKind=SolderMaskExpansion|RuleName=SolderMaskExpansion|Scope=Board|Minimum=1.97
+RuleKind=Width|RuleName=Width|Scope=Board|Minimum=5.91
+RuleKind=Clearance|RuleName=Clearance|Scope=Board|Minimum=9.84
+RuleKind=ShortCircuit|RuleName=ShortCircuit|Scope=Board|Allowed=0
+RuleKind=Clearance|RuleName=Clearance_comp|Scope=Board|Minimum=5.91
