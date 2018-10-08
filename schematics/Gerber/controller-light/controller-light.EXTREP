@@ -1,16 +1,16 @@
 ------------------------------------------------------------------------------------------
-Gerber File Extension Report For: controller-light.GBR   07-Oct-18  10:41:20 PM
+Gerber File Extension Report For: controller-light.GBR   08-Oct-18  10:52:06
 ------------------------------------------------------------------------------------------
 
 
 ------------------------------------------------------------------------------------------
 Layer Extension     Layer Description                      
 ------------------------------------------------------------------------------------------
-.GTL                Top Layer                               
 .GTO                Top Overlay                             
-.GBL                Bottom Layer                            
 .GTP                Top Paste                               
 .GTS                Top Solder                              
+.GTL                Top Layer                               
+.GBL                Bottom Layer                            
 .GBS                Bottom Solder                           
 .GBP                Bottom Paste                            
 .GBO                Bottom Overlay                          
