@@ -80,12 +80,21 @@
 
 #include <io/kfile_block.h>
 
+#include <struct/list.h>
+
 #include <kern/proc.h>
+#include <kern/msg.h>
+#include <kern/signal.h>
+
+#include <mware/event.h>
+
 
 #define MAX_BRIGHTNESS 100
 #define NUM_LED_ROWS   8
 #define NUM_LED_COLS   8
 #define NUM_LEDS       (NUM_LED_COLS * NUM_LED_ROWS)
+
+
 
 static Sipo sipo;
 static Eeprom eep;
@@ -134,17 +143,17 @@ static void init(void)
 
 	flash_init(&internal_flash, FLASH_WRITE_ONCE);
 	// trim flash to avoid problems with kfile_block
-	kprintf("Trim start: %d, blocks: %ld\n", TRIM_START, internal_flash.blk.blk_cnt - TRIM_START);
+	LOG_INFO("Trim start: %d, blocks: %ld\n", TRIM_START, internal_flash.blk.blk_cnt - TRIM_START);
 	kblock_trim(&internal_flash.blk, TRIM_START, internal_flash.blk.blk_cnt - TRIM_START);
 	kfileblock_init(&flash, &internal_flash.blk);
 
 	/* init usb feature to run custom cmd. */
-	usbfeature_init(&usb_feature_ctx, &usb_feature_msg, &flash.fd);
-	usbfeature_setStatus(&usb_feature_ctx, FEAT_ST_APP);
+	//usbfeature_init(&usb_feature_ctx, &usb_feature_msg, &flash.fd);
+	//usbfeature_setStatus(&usb_feature_ctx, FEAT_ST_APP);
 
-	/* Initialize the USB keyboard device */
-	usbkbd_eventRegister(); // For custom feature
-	usbkbd_init(0);
+	///* Initialize the USB keyboard device */
+	//usbkbd_eventRegister(); // For custom feature
+	//usbkbd_init(0);
 
 	/* Initialize keymap */
 	keymap_init();
@@ -155,28 +164,49 @@ static void init(void)
 
 }
 
-static void NORETURN feature_proc(void)
-{
-	/* Wait feature command from usb */
-	while (1)
-	{
-		usbfeature_poll(&usb_feature_ctx);
-	}
-}
+typedef struct {
+	Msg msg;
+	int val;
+} PressedKeyEvent;
+
+#define NODE_TO_KEYEV(n)   (containerof(containerof((n), Msg, link), PressedKeyEvent, msg))
+#define KEYEV_TO_NODE(ev)  (&((ev)->msg.link))
+
+static PressedKeyEvent pressed_keys[10];
+static MsgPort key_event_port;
+static List free_event;
+
+static size_t uno;
+
+//static void NORETURN feature_proc(void)
+//{
+//	/* Wait feature command from usb */
+//	while (1)
+//	{
+//		usbfeature_poll(&usb_feature_ctx);
+//	}
+//}
 
 static void NORETURN scan_proc(void)
 {
-	UsbKbdEvent *event;
-
 	/* Periodically scan the keyboard */
 	while (1)
 	{
-		keymap_scan();
+		//keymap_scan();
+		timer_delay(250);
 
-		if ((event = keymap_get_next_code()) != NULL)
-			usbkbd_sendEvent(event);
+		if (LIST_EMPTY(&free_event))
+		{
+			LOG_WARN("No enough slot for events\n");
+			continue;
+		}
 
-		timer_delay(1);
+		PressedKeyEvent *ev = NODE_TO_KEYEV(list_remTail(&free_event));
+
+		ev->val = uno;
+		kprintf("Scan send key[%d]\n", ev->val);
+		msg_put(&key_event_port, &ev->msg);
+		uno++;
 	}
 }
 
@@ -187,9 +217,31 @@ int main(void)
 
 	/* Sample process */
 	proc_new(scan_proc, NULL, KERN_MINSTACKSIZE, NULL);
-	proc_new(feature_proc, NULL, 0x400, NULL);
+	//proc_new(feature_proc, NULL, 0x400, NULL);
+
+	msg_initPort(&key_event_port, event_createSignal(proc_current(), SIG_USER0));
+
+	LIST_INIT(&free_event);
+	for (size_t i = 0; i < countof(pressed_keys); i++) {
+		Node *n = KEYEV_TO_NODE(&pressed_keys[i]);
+		ADDTAIL(&free_event, n);
+	}
 
 	while (1) {
-		timer_delay(5000);
+		sig_wait(SIG_USER0);
+		PressedKeyEvent *m = containerof(msg_get(&key_event_port), PressedKeyEvent, msg);
+		Node *n = KEYEV_TO_NODE(m);
+		if (n)
+		{
+			ADDHEAD(&free_event, n);
+		}
+		kprintf("Proc..process message val[%d]\n", m->val);
+
+		//UsbKbdEvent *event;
+		//if ((event = keymap_get_next_code()) != NULL)
+		//	usbkbd_sendEvent(event);
+
+		timer_delay(1000);
 	}
 }
+
