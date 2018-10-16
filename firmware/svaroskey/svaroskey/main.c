@@ -88,13 +88,10 @@
 
 #include <mware/event.h>
 
-
 #define MAX_BRIGHTNESS 100
 #define NUM_LED_ROWS   8
 #define NUM_LED_COLS   8
 #define NUM_LEDS       (NUM_LED_COLS * NUM_LED_ROWS)
-
-
 
 static Sipo sipo;
 static Eeprom eep;
@@ -131,6 +128,9 @@ static void init(void)
 
 	kprintf("\n\n==== Main HID App ====\n");
 
+
+	hw_keymap_init();
+
 	/* Initialize system timer */
 	timer_init();
 
@@ -156,7 +156,7 @@ static void init(void)
 	//usbkbd_init(0);
 
 	/* Initialize keymap */
-	keymap_init();
+	hw_keymap_init();
 
 	/* Initialize EEPROM */
 	i2c_init(&i2c, I2C_BITBANG0, CONFIG_I2C_FREQ);
@@ -164,19 +164,19 @@ static void init(void)
 
 }
 
+#define MAX_PRESSED_KEY  10
 typedef struct {
 	Msg msg;
-	int val;
+	size_t len;
+	uint8_t key_index[MAX_PRESSED_KEY];
 } PressedKeyEvent;
 
 #define NODE_TO_KEYEV(n)   (containerof(containerof((n), Msg, link), PressedKeyEvent, msg))
 #define KEYEV_TO_NODE(ev)  (&((ev)->msg.link))
 
-static PressedKeyEvent pressed_keys[10];
+static PressedKeyEvent pressed_keys[5];
 static MsgPort key_event_port;
 static List free_event;
-
-static size_t uno;
 
 //static void NORETURN feature_proc(void)
 //{
@@ -186,14 +186,24 @@ static size_t uno;
 //		usbfeature_poll(&usb_feature_ctx);
 //	}
 //}
+//
+
+
+static void dump(PressedKeyEvent *ev)
+{
+	kputs("Pressed: [");
+	for (size_t i = 0; i < ev->len; i++)
+		kprintf("%d ", ev->key_index[i]);
+
+	kputs("]\n");
+
+}
 
 static void NORETURN scan_proc(void)
 {
 	/* Periodically scan the keyboard */
 	while (1)
 	{
-		//keymap_scan();
-		timer_delay(250);
 
 		if (LIST_EMPTY(&free_event))
 		{
@@ -202,11 +212,20 @@ static void NORETURN scan_proc(void)
 		}
 
 		PressedKeyEvent *ev = NODE_TO_KEYEV(list_remTail(&free_event));
+		ev->len = hw_keymap_scan(ev->key_index, MAX_PRESSED_KEY);
 
-		ev->val = uno;
-		kprintf("Scan send key[%d]\n", ev->val);
+		if (ev->len == 0)
+		{
+			memset(ev->key_index, 0, MAX_PRESSED_KEY);
+			ev->len = 0;
+
+			ADDHEAD(&free_event, KEYEV_TO_NODE(ev));
+			continue;
+		}
+
 		msg_put(&key_event_port, &ev->msg);
-		uno++;
+
+		timer_delay(250);
 	}
 }
 
@@ -235,13 +254,14 @@ int main(void)
 		{
 			ADDHEAD(&free_event, n);
 		}
-		kprintf("Proc..process message val[%d]\n", m->val);
+
+		dump(m);
 
 		//UsbKbdEvent *event;
 		//if ((event = keymap_get_next_code()) != NULL)
 		//	usbkbd_sendEvent(event);
 
-		timer_delay(1000);
+		//timer_delay(1000);
 	}
 }
 
