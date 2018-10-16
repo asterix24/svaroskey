@@ -9,3 +9,9 @@ name = "Keyboard Controller"
 hw_ver = "0"
 pcb_ver = "A"
 date = "27/10/2016"
+
+[controller-light]
+name = "Keyboard Controller light"
+hw_ver = "0"
+pcb_ver = "A"
+date = "04/10/2018"
