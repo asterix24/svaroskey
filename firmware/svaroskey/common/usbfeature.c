@@ -242,9 +242,9 @@ void usbfeature_poll(UsbFeatureCtx *ctx)
 				LOG_ERR("Feature Callback, fail! [%d]\n", ret);
 			}
 
-			usbkbd_featureWrite(ctx->msg, sizeof(UsbFeatureMsg), 50);
-			LOG_INFO("Feature Write cmd[%d] len[%u]\n", \
-					ctx->msg->cmd, sizeof(UsbFeatureMsg));
+			usbkbd_featureWrite(ctx->msg, sizeof(UsbFeatureMsg), 250);
+			LOG_INFO("Feature Write cmd[%d] len[%u] {%s}\n", \
+					ctx->msg->cmd, sizeof(UsbFeatureMsg), ctx->msg->data);
 		}
 	}
 }
