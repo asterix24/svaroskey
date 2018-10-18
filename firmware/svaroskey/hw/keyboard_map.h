@@ -89,22 +89,21 @@
 
 #define COL0   0  //PB0
 #define COL1   1  //PB1
-#define COL2   2  //PB2
-#define COL3   3  //PB3
-#define COL4   4  //PB4
-#define COL5   5  //PB5
-#define COL6   6  //PB6
-#define COL7   7  //PB7
-#define COL8   8  //PB8
-#define COL9   9  //PB9
-#define COL10  12 //PB12
-#define COL11  13 //PB13
-#define COL12  14 //PB14
+#define COL2   3  //PB3
+#define COL3   4  //PB4
+#define COL4   5  //PB5
+#define COL5   6  //PB6
+#define COL6   7  //PB7
+#define COL7   8  //PB8
+#define COL8   9  //PB9
+#define COL9  12 //PB12
+#define COL10  13 //PB13
+#define COL11  14 //PB14
 
 #define KEYMAP_COL_PINS_PORTB (\
 	BV(COL0) | BV(COL1)| BV(COL2)  | BV(COL3) | \
 	BV(COL4) | BV(COL5)| BV(COL6)  | BV(COL7) | \
-	BV(COL8) | BV(COL9)| BV(COL10) | BV(COL11) | BV(COL12) \
+	BV(COL8) | BV(COL9)| BV(COL10) | BV(COL11) \
 	)
 
 #define KEYMAP_COL_MASK KEYMAP_COL_PINS_PORTB
@@ -117,7 +116,7 @@
 #define ROW5   5   //PC5
 
 #define KEYMAP_ROW_PINS_PORTC (\
-	BV(ROW1) | BV(ROW1)| BV(ROW2)  | BV(ROW3) | \
+	BV(ROW0) | BV(ROW1)| BV(ROW2)  | BV(ROW3) | \
 	BV(ROW4) | BV(ROW5) \
 	)
 
@@ -128,15 +127,15 @@
 		RCC->APB2ENR |= RCC_APB2_GPIOB; \
 		stm32_gpioPinConfig(port_mappings[KEY_PORTB], KEYMAP_COL_PINS_PORTB, \
 				GPIO_MODE_OUT_PP, GPIO_SPEED_50MHZ); \
-		stm32_gpioPinWrite(port_mappings[KEY_PORTB], KEYMAP_COL_PINS_PORTB, false); \
+		stm32_gpioPinWrite(port_mappings[KEY_PORTB], KEYMAP_COL_PINS_PORTB, 0); \
 	} while (0)
 
 #define KEYBOARD_INIT_ROWS() \
 	do { \
 		RCC->APB2ENR |= RCC_APB2_GPIOC; \
 		stm32_gpioPinConfig(port_mappings[KEY_PORTC], KEYMAP_ROW_PINS_PORTC, \
-				GPIO_MODE_IPD, GPIO_SPEED_50MHZ); \
-		stm32_gpioPinWrite(port_mappings[KEY_PORTC], KEYMAP_ROW_PINS_PORTC, false); \
+				GPIO_MODE_OUT_PP, GPIO_SPEED_50MHZ); \
+		stm32_gpioPinWrite(port_mappings[KEY_PORTC], KEYMAP_ROW_PINS_PORTC, 0); \
 	} while (0)
 
 
