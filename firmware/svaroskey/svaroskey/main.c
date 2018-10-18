@@ -148,12 +148,12 @@ static void init(void)
 	kfileblock_init(&flash, &internal_flash.blk);
 
 	/* init usb feature to run custom cmd. */
-	//usbfeature_init(&usb_feature_ctx, &usb_feature_msg, &flash.fd);
-	//usbfeature_setStatus(&usb_feature_ctx, FEAT_ST_APP);
+	usbfeature_init(&usb_feature_ctx, &usb_feature_msg, &flash.fd);
+	usbfeature_setStatus(&usb_feature_ctx, FEAT_ST_APP);
 
 	///* Initialize the USB keyboard device */
-	//usbkbd_eventRegister(); // For custom feature
-	//usbkbd_init(0);
+	usbkbd_eventRegister(); // For custom feature
+	usbkbd_init(0);
 
 	/* Initialize keymap */
 	hw_keymap_init();
@@ -178,15 +178,15 @@ static PressedKeyEvent pressed_keys[5];
 static MsgPort key_event_port;
 static List free_event;
 
-//static void NORETURN feature_proc(void)
-//{
-//	/* Wait feature command from usb */
-//	while (1)
-//	{
-//		usbfeature_poll(&usb_feature_ctx);
-//	}
-//}
-//
+static void NORETURN feature_proc(void)
+{
+	/* Wait feature command from usb */
+	while (1)
+	{
+		usbfeature_poll(&usb_feature_ctx);
+	}
+}
+
 
 
 static void dump(PressedKeyEvent *ev)
@@ -225,7 +225,7 @@ static void NORETURN scan_proc(void)
 
 		msg_put(&key_event_port, &ev->msg);
 
-		timer_delay(250);
+		timer_delay(100);
 	}
 }
 
@@ -236,7 +236,7 @@ int main(void)
 
 	/* Sample process */
 	proc_new(scan_proc, NULL, KERN_MINSTACKSIZE, NULL);
-	//proc_new(feature_proc, NULL, 0x400, NULL);
+	proc_new(feature_proc, NULL, 0x400, NULL);
 
 	msg_initPort(&key_event_port, event_createSignal(proc_current(), SIG_USER0));
 
