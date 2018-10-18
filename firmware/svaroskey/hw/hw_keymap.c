@@ -42,7 +42,7 @@ int kw_keymap_read(uint8_t index)
 	/* Select Column */
 	stm32_gpioPinWrite(col_port, BV(col_id), 1);
 
-	timer_udelay(2);
+	timer_udelay(5);
 
 	/* Read column */
 	bool ret = stm32_gpioPinRead(row_port, BV(row_id));
