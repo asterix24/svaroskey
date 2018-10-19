@@ -506,9 +506,8 @@ static void __usb_ep_io(int EP)
 				pDst = (uint32_t *)USB_MEM_ADDR(EP_DTB_READ(EP >> 1, ADDR_TX_OFFSET));
 				break;
 			case USB_ENDPOINT_XFER_ISOC:
-				LOG_ERR("%s: isochronous transfer not supported\n",
-					__func__);
-				/* Fallback to default */
+				LOG_ERR("%s: isochronous transfer not supported\n", __func__);
+				/* FALLTHROUGH */
 			default:
 				ASSERT(0);
 				return;
@@ -562,9 +561,8 @@ static void __usb_ep_io(int EP)
 				pSrc = (uint32_t *)USB_MEM_ADDR(EP_DTB_READ(EP >> 1, ADDR_RX_OFFSET));
 				break;
 			case USB_ENDPOINT_XFER_ISOC:
-				LOG_ERR("%s: isochronous transfer not supported\n",
-					__func__);
-				/* Fallback to default */
+				LOG_ERR("%s: isochronous transfer not supported\n", __func__);
+				/* FALLTHROUGH */
 			default:
 				ASSERT(0);
 				return;
@@ -835,7 +833,7 @@ static int usb_ep_configure(const UsbEndpointDesc *epd, bool enable)
 			LOG_ERR("EP%d: ISOCHRONOUS %s: not supported\n",
 					EP >> 1,
 					EP & 1 ? "IN" : "OUT");
-			/* Fallback to default */
+				/* FALLTHROUGH */
 		default:
 			ASSERT(0);
 			return -USB_NODEV_ERROR;
