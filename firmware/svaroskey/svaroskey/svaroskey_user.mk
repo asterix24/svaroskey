@@ -12,8 +12,7 @@ svaroskey_USER_CSRC = \
 	$(svaroskey_SRC_PATH)/main.c \
 	common/usbfeature.c \
 	common/crc32.c \
-	$(svaroskey_HW_PATH)/hw/hw_keymap.c \
-	$(svaroskey_HW_PATH)/hw/keyboard_map.c \
+	$(svaroskey_LAYOUT_PATH)/keyboard.c \
 	#
 
 # Files included by the user.

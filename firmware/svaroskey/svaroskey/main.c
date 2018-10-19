@@ -55,8 +55,8 @@
  *
  */
 
-#include "keymap.h"
-#include "hw/hw_keymap.h"
+#include "keyboard.h"
+
 #include "hw/hw_boot.h"
 
 
