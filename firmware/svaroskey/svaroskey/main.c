@@ -56,6 +56,7 @@
  */
 
 #include "keyboard.h"
+#include "layouts.h"
 
 #include "hw/hw_boot.h"
 
@@ -98,6 +99,11 @@ static Eeprom eep;
 static I2c i2c;
 static Flash internal_flash;
 static KFileBlock flash;
+
+static PressedKeyEvent pressed_keys[5];
+static MsgPort key_event_port;
+static List free_event;
+
 
 static UsbFeatureCtx usb_feature_ctx;
 static UsbFeatureMsg usb_feature_msg;
@@ -162,21 +168,9 @@ static void init(void)
 	i2c_init(&i2c, I2C_BITBANG0, CONFIG_I2C_FREQ);
 	eeprom_init(&eep, &i2c, EEPROM_24XX128, 0x00, false);
 
+	layout_init();
+
 }
-
-#define MAX_PRESSED_KEY  10
-typedef struct {
-	Msg msg;
-	size_t len;
-	uint8_t key_index[MAX_PRESSED_KEY];
-} PressedKeyEvent;
-
-#define NODE_TO_KEYEV(n)   (containerof(containerof((n), Msg, link), PressedKeyEvent, msg))
-#define KEYEV_TO_NODE(ev)  (&((ev)->msg.link))
-
-static PressedKeyEvent pressed_keys[5];
-static MsgPort key_event_port;
-static List free_event;
 
 static void NORETURN feature_proc(void)
 {
@@ -187,8 +181,6 @@ static void NORETURN feature_proc(void)
 	}
 }
 
-
-
 static void dump(PressedKeyEvent *ev)
 {
 	kputs("Pressed: [");
@@ -196,7 +188,6 @@ static void dump(PressedKeyEvent *ev)
 		kprintf("%d ", ev->key_index[i]);
 
 	kputs("]\n");
-
 }
 
 static void NORETURN scan_proc(void)
@@ -204,7 +195,6 @@ static void NORETURN scan_proc(void)
 	/* Periodically scan the keyboard */
 	while (1)
 	{
-
 		if (LIST_EMPTY(&free_event))
 		{
 			LOG_WARN("No enough slot for events\n");
@@ -224,8 +214,7 @@ static void NORETURN scan_proc(void)
 		}
 
 		msg_put(&key_event_port, &ev->msg);
-
-		timer_delay(100);
+		timer_delay(150);
 	}
 }
 
@@ -246,22 +235,32 @@ int main(void)
 		ADDTAIL(&free_event, n);
 	}
 
-	while (1) {
+	while (1)
+	{
+		Node *key_node_item;
 		sig_wait(SIG_USER0);
 		PressedKeyEvent *m = containerof(msg_get(&key_event_port), PressedKeyEvent, msg);
-		Node *n = KEYEV_TO_NODE(m);
-		if (n)
+		//dump(m);
+
+		UsbKbdEvent event;
+		memset(&event, 0x0, sizeof(UsbKbdEvent));
+
+		if (layout_usbEvent(&event, m) < 0)
 		{
-			ADDHEAD(&free_event, n);
+			LOG_ERR("Layout event error\n");
+			goto free_node;
 		}
 
-		dump(m);
+		// send and release pressed key.
+		usbkbd_sendEvent(&event);
+		memset(&event, 0x0, sizeof(UsbKbdEvent));
+		usbkbd_sendEvent(&event);
 
-		//UsbKbdEvent *event;
-		//if ((event = keymap_get_next_code()) != NULL)
-		//	usbkbd_sendEvent(event);
-
-		//timer_delay(1000);
+free_node:
+		key_node_item = KEYEV_TO_NODE(m);
+		if (key_node_item )
+			ADDHEAD(&free_event, key_node_item);
 	}
+
 }
 

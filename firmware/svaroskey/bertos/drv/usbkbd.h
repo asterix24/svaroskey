@@ -48,13 +48,15 @@
 
 #include <io/kfile.h>
 
+#define USBKBD_MAX_SCANCODE_NUM  6
+
 /**
  * USB keyboard event descriptor.
  */
 typedef struct UsbKbdEvent
 {
 	uint8_t mods;
-	uint8_t codes[6];
+	uint8_t codes[USBKBD_MAX_SCANCODE_NUM];
 } UsbKbdEvent;
 
 
