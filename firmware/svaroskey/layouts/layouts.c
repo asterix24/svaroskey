@@ -42,28 +42,27 @@ int layout_usbEvent(UsbKbdEvent *event, KeyScanCtx *key_status)
 	for (size_t i =  0; i < MAX_KEY_STATUS; i++)
 	{
 
-		// this key not change its status, discard it.
-		if (!(key_status->status[i] & KEY_CHANGED))
-			continue;
-
 		uint16_t key_id = key_status->index[i];
 		if (key_id > KEYBOARD_LAYOUT_NUM_KEYS)
 		{
-			
-			key_status->status[i] = 0;
-			key_status->index[i] = 0xff;
-			kprintf("Invalid key id {%d} idx[%d]\n", key_id, i);
-			return -2;
+			//key_status->status[i] = 0;
+			//key_status->index[i] = 0xff;
+			//kprintf("Invalid key id {%d} idx[%d]\n", key_id, i);
+			continue;
 		}
 
-		uint16_t scancode = 0;
+		uint16_t scancode;
 		if (key_status->status[i] & KEY_PRESSED)
+		{
+			// key used, reset changed flag.
 			scancode = keymap_layout[key_id].scancode;
+		}
 		else
+		{
+			scancode = 0;
 			key_status->index[i] = 0xff;
-
-		// key used, reset changed flag.
-		key_status->status[i] &= ~KEY_CHANGED;
+			key_status->status[i] = 0;
+		}
 
 		// Check if the key is a modifier key
 		if (scancode > 0xff)

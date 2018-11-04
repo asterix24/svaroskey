@@ -69,7 +69,7 @@ static uint8_t key_status[KEYBOARD_LAYOUT_NUM_KEYS];
 void hw_keymap_pushKey(KeyScanCtx *ctx, uint8_t index, uint8_t status)
 {
 	size_t  free_index = 0;
-	for (size_t i = KEY_CHANGED; i > 0; i--)
+	for (int i = MAX_KEY_STATUS - 1; i >= 0; i--)
 	{
 		if (!(ctx->status[i] & KEY_CHANGED))
 			free_index = i;
