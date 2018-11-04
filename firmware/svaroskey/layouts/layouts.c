@@ -30,23 +30,40 @@
 	#error No layout defined
 #endif
 
-int layout_usbEvent(UsbKbdEvent *event, PressedKeyEvent *key_ev)
+int layout_usbEvent(UsbKbdEvent *event, KeyScanCtx *key_status)
 {
 	ASSERT(event);
 
-	if(!key_ev)
+	if(!key_status)
 		return -1;
 
 	kputs("USB [ ");
 	size_t index = 0;
-	for (size_t i =  0; i < key_ev->len; i++)
+	for (size_t i =  0; i < MAX_KEY_STATUS; i++)
 	{
-		uint16_t key_id = key_ev->key_index[i];
+
+		// this key not change its status, discard it.
+		if (!(key_status->status[i] & KEY_CHANGED))
+			continue;
+
+		uint16_t key_id = key_status->index[i];
 		if (key_id > KEYBOARD_LAYOUT_NUM_KEYS)
+		{
+			
+			key_status->status[i] = 0;
+			key_status->index[i] = 0xff;
+			kprintf("Invalid key id {%d} idx[%d]\n", key_id, i);
 			return -2;
+		}
 
-		uint16_t scancode = keymap_layout[key_id].scancode;
+		uint16_t scancode = 0;
+		if (key_status->status[i] & KEY_PRESSED)
+			scancode = keymap_layout[key_id].scancode;
+		else
+			key_status->index[i] = 0xff;
 
+		// key used, reset changed flag.
+		key_status->status[i] &= ~KEY_CHANGED;
 
 		// Check if the key is a modifier key
 		if (scancode > 0xff)

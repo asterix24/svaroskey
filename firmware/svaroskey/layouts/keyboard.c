@@ -21,6 +21,8 @@
 #include <drv/gpio_stm32.h>
 #include <drv/clock_stm32.h>
 
+#include <struct/list.h>
+
 static struct stm32_gpio * const port_mappings[] = {
 	((struct stm32_gpio *)GPIOA_BASE),
 	((struct stm32_gpio *)GPIOB_BASE),
@@ -28,12 +30,12 @@ static struct stm32_gpio * const port_mappings[] = {
 };
 
 #if CFG_KEYBOARD_LAYOUT == KEYBOARD_PETROSKEY_LAYOUT
-	#include "hw/petroskey.c"
+#include "hw/petroskey.c"
 #else
-	#error No layout defined
+#error No layout defined
 #endif
 
-int kw_keymap_read(uint8_t index)
+bool hw_keymap_read(uint8_t index)
 {
 	struct stm32_gpio *col_port = port_mappings[keyboard_layout[index].col_port_idx];
 	struct stm32_gpio *row_port = port_mappings[keyboard_layout[index].row_port_idx];
@@ -57,24 +59,68 @@ int kw_keymap_read(uint8_t index)
 	return ret;
 }
 
-size_t hw_keymap_scan(uint8_t *keys, size_t len)
+static uint16_t key_bounce[KEYBOARD_LAYOUT_NUM_KEYS];
+static uint8_t key_status[KEYBOARD_LAYOUT_NUM_KEYS];
+
+#define KEY_RELEASE_BOUNCE  3
+#define KEY_PRESS_BOUNCE    2
+
+
+void hw_keymap_pushKey(KeyScanCtx *ctx, uint8_t index, uint8_t status)
 {
-	ASSERT(keys);
-
-	size_t count = 0;
-	for (int i = 0; i < KEYBOARD_LAYOUT_NUM_KEYS; i++)
+	size_t  free_index = 0;
+	for (size_t i = KEY_CHANGED; i > 0; i--)
 	{
-		if (kw_keymap_read(i))
-		{
-			if (count >= len)
-				return count;
+		if (!(ctx->status[i] & KEY_CHANGED))
+			free_index = i;
 
-			keys[count] = i;
-			count++;
+		if (index == ctx->index[i])
+		{
+			ctx->status[i] = status | KEY_CHANGED;
+			ctx->index[i] = index;
+			return;
 		}
 	}
 
-	return count;
+	ctx->index[free_index] = index;
+	ctx->status[free_index] = status | KEY_CHANGED;
+}
+
+void hw_keymap_scan(KeyScanCtx *ctx)
+{
+	for (int i = 0; i < KEYBOARD_LAYOUT_NUM_KEYS; i++)
+	{
+		// Check key status, and keys where not elapse bounce
+		if (key_bounce[i] != 0)
+		{
+			//kprintf("dec[%d] %d\n", i, key_bounce[i]);
+			key_bounce[i]--;
+			continue;
+		}
+
+		// For pressed key that bounce time was elapsed
+		if (key_status[i] == KEY_PRESSED && !hw_keymap_read(i))
+		{
+			// good key, put in a message
+			key_status[i] = KEY_RELEASE;
+			key_bounce[i] = KEY_RELEASE_BOUNCE;
+
+			// update key status map
+			//kprintf("release[%d]\n", i);
+			hw_keymap_pushKey(ctx, i, key_status[i]);
+		}
+
+		// No pressed already, new key found
+		if (key_status[i] == KEY_RELEASE && hw_keymap_read(i))
+		{
+			key_status[i] = KEY_PRESSED;
+			key_bounce[i] = KEY_PRESS_BOUNCE;
+
+			// update key status map
+			//kprintf("pressed[%d]\n", i);
+			hw_keymap_pushKey(ctx, i, key_status[i]);
+		}
+	}
 }
 
 void hw_keymap_init(void)

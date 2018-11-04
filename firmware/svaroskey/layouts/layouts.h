@@ -20,11 +20,21 @@
 
 #include <drv/usbkbd.h>
 
+
+
+
+#define KEY_TIME_SINGLEPRESS   50
+#define KEY_TIME_LONGPRESS     80
+#define KEY_TIME_LOOP          (KEY_TIME_SINGLEPRESS + \
+                                  KEY_TIME_LONGPRESS)
+
 #define MAX_PRESSED_KEY  10
+
 typedef struct {
 	Msg msg;
 	size_t len;
-	uint8_t key_index[MAX_PRESSED_KEY];
+	uint8_t status[MAX_PRESSED_KEY];
+	uint8_t index[MAX_PRESSED_KEY];
 } PressedKeyEvent;
 
 #define NODE_TO_KEYEV(n)   (containerof(containerof((n), Msg, link), PressedKeyEvent, msg))
@@ -38,7 +48,7 @@ typedef struct
 
 extern KeyBinding keymap_layout[KEYBOARD_LAYOUT_NUM_KEYS];
 
-int layout_usbEvent(UsbKbdEvent *event, PressedKeyEvent *key_ev);
+int layout_usbEvent(UsbKbdEvent *event, KeyScanCtx *key_status);
 void layout_init(void);
 
 #endif /* SVAROSKEY_LAYOUTS_H */

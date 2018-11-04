@@ -29,6 +29,14 @@ typedef struct {
 	uint8_t row_port_idx;
 } KeyMap;
 
+
+#define MAX_KEY_STATUS 10
+
+typedef struct {
+	uint8_t index[MAX_KEY_STATUS];
+	uint8_t status[MAX_KEY_STATUS];
+} KeyScanCtx;
+
 /*
  * Define column and rows for matrix keys.
  * Column should be place to power supply, and row to ground.
@@ -40,13 +48,19 @@ typedef struct {
 	#error No layout defined
 #endif
 
+#define KEY_RELEASE       0
+#define KEY_PRESSED       BV(0)
+#define KEY_CHANGED       BV(7)
 
-size_t hw_keymap_scan(uint8_t *keys, size_t len);
-int kw_keymap_read(uint8_t index);
-
-void hw_keymap_init(void);
 
 extern KeyMap keyboard_layout[KEYBOARD_LAYOUT_NUM_KEYS];
+
+bool hw_keymap_read(uint8_t index);
+void hw_keymap_scan(KeyScanCtx *ctx);
+int hw_keymap_popKey(KeyScanCtx *ctx, uint8_t index);
+void hw_keymap_pushKey(KeyScanCtx *ctx, uint8_t index, uint8_t status);
+
+void hw_keymap_init(void);
 
 #endif /* LAYOUT_KEYBOARD_H */
 

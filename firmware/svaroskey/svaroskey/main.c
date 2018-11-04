@@ -80,13 +80,8 @@
 #include <drv/flash.h>
 
 #include <io/kfile_block.h>
-
 #include <struct/list.h>
-
 #include <kern/proc.h>
-#include <kern/msg.h>
-#include <kern/signal.h>
-
 #include <mware/event.h>
 
 #define MAX_BRIGHTNESS 100
@@ -100,10 +95,7 @@ static I2c i2c;
 static Flash internal_flash;
 static KFileBlock flash;
 
-static PressedKeyEvent pressed_keys[5];
-static MsgPort key_event_port;
-static List free_event;
-
+static Event key_status_change;
 
 static UsbFeatureCtx usb_feature_ctx;
 static UsbFeatureMsg usb_feature_msg;
@@ -181,41 +173,38 @@ static void NORETURN feature_proc(void)
 	}
 }
 
-static void dump(PressedKeyEvent *ev)
-{
-	kputs("Pressed: [");
-	for (size_t i = 0; i < ev->len; i++)
-		kprintf("%d ", ev->key_index[i]);
-
-	kputs("]\n");
-}
+static KeyScanCtx keymap_status;
 
 static void NORETURN scan_proc(void)
 {
 	/* Periodically scan the keyboard */
 	while (1)
 	{
-		if (LIST_EMPTY(&free_event))
+		ticks_t start = timer_clock();
+		while ((timer_clock() - start) < ms_to_ticks(10))
 		{
-			LOG_WARN("No enough slot for events\n");
-			continue;
+			hw_keymap_scan(&keymap_status);
+			timer_delay(1);
 		}
 
-		PressedKeyEvent *ev = NODE_TO_KEYEV(list_remTail(&free_event));
-		ev->len = hw_keymap_scan(ev->key_index, MAX_PRESSED_KEY);
-
-		if (ev->len == 0)
+		for (int i = 0; i < MAX_KEY_STATUS; i++)
 		{
-			memset(ev->key_index, 0, MAX_PRESSED_KEY);
-			ev->len = 0;
-
-			ADDHEAD(&free_event, KEYEV_TO_NODE(ev));
-			continue;
+			if (keymap_status.status[i] & KEY_CHANGED)
+			{
+				event_do(&key_status_change);
+				break;
+			}
 		}
-
-		msg_put(&key_event_port, &ev->msg);
-		timer_delay(150);
+		cpu_relax();
 	}
+}
+
+static void dump(const char* label)
+{
+	kprintf("%s: [", label);
+	for (int i = 0; i < MAX_KEY_STATUS; i++)
+		kprintf("%d {%x}, ", keymap_status.index[i], keymap_status.status[i]);
+	kputs("]\n");
 }
 
 int main(void)
@@ -224,43 +213,31 @@ int main(void)
 	init();
 
 	/* Sample process */
+
+	event_initGeneric(&key_status_change);
+
 	proc_new(scan_proc, NULL, KERN_MINSTACKSIZE, NULL);
 	proc_new(feature_proc, NULL, 0x400, NULL);
 
-	msg_initPort(&key_event_port, event_createSignal(proc_current(), SIG_USER0));
-
-	LIST_INIT(&free_event);
-	for (size_t i = 0; i < countof(pressed_keys); i++) {
-		Node *n = KEYEV_TO_NODE(&pressed_keys[i]);
-		ADDTAIL(&free_event, n);
-	}
-
 	while (1)
 	{
-		Node *key_node_item;
-		sig_wait(SIG_USER0);
-		PressedKeyEvent *m = containerof(msg_get(&key_event_port), PressedKeyEvent, msg);
-		//dump(m);
-
 		UsbKbdEvent event;
 		memset(&event, 0x0, sizeof(UsbKbdEvent));
 
-		if (layout_usbEvent(&event, m) < 0)
+		// Wait key press status changes
+		event_wait(&key_status_change);
+		dump("Scanned");
+
+		if (layout_usbEvent(&event, &keymap_status) < 0)
 		{
 			LOG_ERR("Layout event error\n");
-			goto free_node;
+			continue;
 		}
 
-		// send and release pressed key.
 		usbkbd_sendEvent(&event);
-		memset(&event, 0x0, sizeof(UsbKbdEvent));
-		usbkbd_sendEvent(&event);
-
-free_node:
-		key_node_item = KEYEV_TO_NODE(m);
-		if (key_node_item )
-			ADDHEAD(&free_event, key_node_item);
+		dump("Process");
+		 kputs("\n...................\n");
 	}
-
+	return 0;
 }
 
