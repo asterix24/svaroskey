@@ -165,11 +165,11 @@ u8 u8_usbStringVendor[USB_VENDOR_STR_LEN] = {
     0x03,
     'D', 0, 'e', 0, 'v', 0, 'e', 0, 'l', 0, 'e', 0, 'r', 0
 };
-#define USB_PRODUCT_STR_LEN 0x14
+#define USB_PRODUCT_STR_LEN 0x1E
 u8 u8_usbStringProduct[USB_PRODUCT_STR_LEN] = {
     USB_PRODUCT_STR_LEN,
     0x03,
-    'S', 0, 'v', 0, 'a', 0, 'r', 0, 'o', 0, 's', 0, 'k', 0, 'e', 0, 'y', 0
+    'S', 0, 'v', 0, 'a', 0, 'r', 0, 'o', 0, 's', 0, 'k', 0, 'e', 0, 'y', 0, ' ', 0, 'B', 0, 'o', 0, 'o', 0, 't', 0
 };
 #define USB_SERIAL_STR_LEN 0x08
 u8 u8_usbStringSerial[USB_SERIAL_STR_LEN] = {
