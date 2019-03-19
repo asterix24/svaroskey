@@ -6,3 +6,4 @@ out/
 *.Dat
 .DS_Store
 *.htm
+.envrc
