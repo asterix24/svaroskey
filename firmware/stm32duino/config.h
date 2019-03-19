@@ -384,6 +384,9 @@
     /* CRISTAL 12MHz */
     #define XTAL12M     1
 
+    /* This is about ~5 seconds */
+    #define BOOTLOADER_WAIT 10
+
 #else
     #error "No config for this target"
 #endif
