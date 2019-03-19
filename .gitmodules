@@ -1,0 +1,13 @@
+[submodule "firmware/qmk/lib/chibios"]
+	path = firmware/qmk/lib/chibios
+	url = https://github.com/qmk/ChibiOS
+[submodule "firmware/qmk/lib/chibios-contrib"]
+	path = firmware/qmk/lib/chibios-contrib
+	url = https://github.com/qmk/ChibiOS-Contrib
+	branch = k-type-fix
+[submodule "firmware/qmk/lib/ugfx"]
+	path = firmware/qmk/lib/ugfx
+	url = https://github.com/qmk/uGFX
+[submodule "firmware/qmk/lib/googletest"]
+	path = firmware/qmk/lib/googletest
+	url = https://github.com/google/googletest
