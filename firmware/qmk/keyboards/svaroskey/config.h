@@ -24,6 +24,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #define MANUFACTURER    Develer
 #define PRODUCT         Svaroskey
+#define SERIAL_NUMBER   001
 #define DESCRIPTION     QMK keyboard firmware with ChibiOS
 
 /* key matrix size */
