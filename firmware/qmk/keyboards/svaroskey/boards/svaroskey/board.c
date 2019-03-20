@@ -46,4 +46,6 @@ void __early_init(void) {
  * Board-specific initialization code.
  */
 void boardInit(void) {
+  /* At boot, PB3 is used at JTDO. Disable this function. */
+  AFIO->MAPR |= AFIO_MAPR_SWJ_CFG_JTAGDISABLE;
 }

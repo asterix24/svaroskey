@@ -27,10 +27,13 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #define SERIAL_NUMBER   001
 #define DESCRIPTION     QMK keyboard firmware with ChibiOS
 
-/* key matrix size */
+/* Key matrix size */
 #define MATRIX_ROWS 6
-#define MATRIX_COLS 15
+#define MATRIX_COLS 12
 #define DIODE_DIRECTION COL2ROW
+
+#define MATRIX_ROW_PINS { C0, C1, C2, C3, C4, C5 }
+#define MATRIX_COL_PINS { B0, B1, B3, B4, B5, B6, B7, B8, B9, B12, B13, B14 }
 
 // Iso fix for Space Cadet, comment for ANSI layouts
 #define LSPO_KEY KC_8
