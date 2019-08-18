@@ -25,7 +25,7 @@
  * Board identifier.
  */
 #define BOARD_ISOKEY
-#define BOARD_NAME              "IsoK"
+#define BOARD_NAME              "IsoKey"
 
 /*
  * Board frequencies.
