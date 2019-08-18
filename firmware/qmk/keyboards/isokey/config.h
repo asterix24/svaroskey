@@ -29,11 +29,11 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 /* Key matrix size */
 #define MATRIX_ROWS 6
-#define MATRIX_COLS 12
+#define MATRIX_COLS 21
 #define DIODE_DIRECTION COL2ROW
 
 #define MATRIX_ROW_PINS { C0, C1, C2, C3, C4, C5 }
-#define MATRIX_COL_PINS { B0, B1, B3, B4, B5, B6, B7, B8, B9, B12, B13, B14 }
+#define MATRIX_COL_PINS { B0, B1, B3, B4, B5, B6, B7, B8, B9, B12, B13, B14, B15, A0, A1, A4, A5, A6, A7, A8, A9 }
 
 // Iso fix for Space Cadet, comment for ANSI layouts
 #define LSPO_KEY KC_8
