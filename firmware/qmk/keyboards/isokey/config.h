@@ -20,11 +20,11 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 /* USB Device descriptor parameter */
 #define VENDOR_ID       0xDEAD
 #define PRODUCT_ID      0xBEEF
-#define DEVICE_VER      0x0001
+#define DEVICE_VER      0x0002
 
-#define MANUFACTURER    asterix
-#define PRODUCT         IsoK
-#define SERIAL_NUMBER   001
+#define MANUFACTURER    asterix24@gmail.com
+#define PRODUCT         IsoKey
+#define SERIAL_NUMBER   002
 #define DESCRIPTION     QMK keyboard firmware with ChibiOS
 
 /* Key matrix size */
