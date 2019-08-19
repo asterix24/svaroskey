@@ -159,23 +159,23 @@ u8 u8_usbStringLangId[USB_STR_LANG_ID_LEN] = {
     0x09,
     0x04    /* LangID = 0x0409: U.S. English */
 };
-#define USB_VENDOR_STR_LEN 0x10
+#define USB_VENDOR_STR_LEN 0x12
 u8 u8_usbStringVendor[USB_VENDOR_STR_LEN] = {
     USB_VENDOR_STR_LEN,
     0x03,
-    'D', 0, 'e', 0, 'v', 0, 'e', 0, 'l', 0, 'e', 0, 'r', 0
+    'L', 0, 'e', 0, 'a', 0, 'f', 0, 'L', 0, 'a', 0, 'b', 0, 's', 0
 };
-#define USB_PRODUCT_STR_LEN 0x1E
+#define USB_PRODUCT_STR_LEN 0x14
 u8 u8_usbStringProduct[USB_PRODUCT_STR_LEN] = {
     USB_PRODUCT_STR_LEN,
     0x03,
-    'S', 0, 'v', 0, 'a', 0, 'r', 0, 'o', 0, 's', 0, 'k', 0, 'e', 0, 'y', 0, ' ', 0, 'B', 0, 'o', 0, 'o', 0, 't', 0
+    'M', 0, 'a', 0, 'p', 0, 'l', 0, 'e', 0, ' ', 0, '0', 0, '0', 0, '3', 0
 };
-#define USB_SERIAL_STR_LEN 0x08
+#define USB_SERIAL_STR_LEN 0x10
 u8 u8_usbStringSerial[USB_SERIAL_STR_LEN] = {
     USB_SERIAL_STR_LEN,
     0x03,
-    '0', 0, '0', 0, '1', 0
+    'L', 0, 'L', 0, 'M', 0, ' ', 0, '0', 0, '0', 0, '3', 0
 };
 
     u8 u8_usbStringAlt0[ALT0_STR_LEN] = {

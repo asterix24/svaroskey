@@ -369,23 +369,6 @@
     /* CRISTAL 12MHz */
     #define XTAL12M     1
 
-#elif defined TARGET_SVAROSKEY
-
-    /* There is actually no LED, but PB0 is NC */
-    #define LED_BANK            GPIOB
-    #define LED_PIN             0
-    #define LED_ON_STATE        0
-
-    /* USB Disc Pin Setup.   USB DISC is PC11 */
-    #define USB_DISC_BANK       GPIOC
-    #define USB_DISC_PIN        11
-    #define HAS_MAPLE_HARDWARE  1
-
-    /* CRISTAL 12MHz */
-    #define XTAL12M     1
-
-    /* This is about ~5 seconds */
-    #define BOOTLOADER_WAIT 10
 
 #else
     #error "No config for this target"
@@ -408,10 +391,10 @@
 #endif
 
 // defines for USB (DONT CHANGE)
-#define VEND_ID0 0xAD
-#define VEND_ID1 0xDE
-#define PROD_ID0 0xEF
-#define PROD_ID1 0xBE
+#define VEND_ID0 0xAF
+#define VEND_ID1 0x1E
+#define PROD_ID0 0x03
+#define PROD_ID1 0x00
 
 // Value to place in RTC backup register 10 for persistent bootloader mode
 #define RTC_BOOTLOADER_FLAG 0x424C
