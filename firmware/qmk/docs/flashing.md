@@ -60,7 +60,7 @@ There are a number of DFU commands that you can use to flash firmware to a DFU d
 
 ## Caterina
 
-Arduino boards and their clones use the [Caterina bootloader](https://github.com/arduino/Arduino/tree/master/hardware/arduino/avr/bootloaders/caterina) (any keyboard built with a Pro Micro, or clone), and uses the avr109 protocol to communicate through virtual serial. Bootloaders like [A-Star](https://www.pololu.com/docs/0J61/9) are based on Caterina.
+Arduino boards and their clones use the [Caterina bootloader](https://github.com/arduino/ArduinoCore-avr/tree/master/bootloaders/caterina) (any keyboard built with a Pro Micro, or clone), and uses the avr109 protocol to communicate through virtual serial. Bootloaders like [A-Star](https://www.pololu.com/docs/0J61/9) are based on Caterina.
 
 To ensure compatibility with the Caterina bootloader, make sure this block is present your `rules.mk`:
 
@@ -115,6 +115,31 @@ Compatible flashers:
 Flashing sequence:
 
 1. Press the `RESET` keycode, or short RST to GND quickly (you only have 7 seconds to flash once it enters)
+2. Wait for the OS to detect the device
+3. Flash a .hex file
+4. Reset the device into application mode (may be done automatically)
+
+## USBasploader
+
+USBasploader is a bootloader developed by matrixstorm. It is used in some non-USB AVR chips such as the ATmega328P, which run V-USB.
+
+To ensure compatibility with the USBasploader bootloader, make sure this block is present in your `rules.mk`:
+
+    # Bootloader
+    #     This definition is optional, and if your keyboard supports multiple bootloaders of
+    #     different sizes, comment this out, and the correct address will be loaded
+    #     automatically (+60). See bootloader.mk for all options.
+    BOOTLOADER = USBasp
+
+Compatible flashers:
+
+* [QMK Toolbox](https://github.com/qmk/qmk_toolbox/releases) (recommended GUI)
+* [avrdude](http://www.nongnu.org/avrdude/) with the `usbasp` programmer
+* [AVRDUDESS](https://github.com/zkemble/AVRDUDESS)
+
+Flashing sequence:
+
+1. Press the `RESET` keycode, or keep the boot pin shorted to GND while quickly shorting RST to GND
 2. Wait for the OS to detect the device
 3. Flash a .hex file
 4. Reset the device into application mode (may be done automatically)
