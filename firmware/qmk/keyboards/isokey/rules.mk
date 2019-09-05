@@ -2,7 +2,7 @@
 SRC = led.c
 
 # IsoK board w/ stm32duino bootloader
-OPT_DEFS = -DCORTEX_VTOR_INIT=0x2000
+#OPT_DEFS = -DCORTEX_VTOR_INIT=0x2000
 BOARD = isokey
 
 ## chip/board settings
