@@ -23,12 +23,34 @@
 
 enum isokey_keycodes {
   QMKBEST = SAFE_RANGE,
-  EDA_MS, // Move selection
-  EDA_AG, // Arrange group
-  EDA_ZO, // Zoom out
-  EDA_PM, // Poly Manager
-  EDA_SO, // Selction out
-  EDA_SL, // Selection line
+  EDA_MS,  //Move Selection: ms
+  EDA_TOR, // Arrange selection: tor
+  EDA_SL,  // Line Selection: sl
+  EDA_SI, // Select Inside: si
+  EDA_ZB, // Zoom Board: zb
+  EDA_TGM, // Poligon manager: tgm
+  EDA_TGA, // Repoor all: tga
+  EDA_TGR, // Repoor selected: tgr
+  EDA_TGH, // Shelve All: tgh
+  EDA_TDR, // Run design check: tdr
+  EDA_PM, // Poligon manager
+
+  ISK_MACRO_CNT,
+};
+
+const char *isokey_marcos[ISK_MACRO_CNT-SAFE_RANGE] = {
+    "test",
+    "ms",
+    "tol",
+    "sl",
+    "si",
+    "zb",
+    "tgm",
+    "tga",
+    "tgr",
+    "tgh",
+    "tdr",
+    "tgm",
 };
 
 const uint16_t keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
@@ -58,16 +80,16 @@ const uint16_t keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
     [_ALT1] = LAYOUT_alt (
         _______,          _______,  _______,  _______,  _______,    _______,   _______,    _______,  _______,    _______,   _______,  _______,   _______,    _______,  _______,   _______,   _______,   _______,   _______, _______, \
         _______, _______, _______,  _______,  _______,  _______,    _______,   _______,    _______,  _______,    _______,   _______,  _______,   _______,    _______,  _______,   _______,   _______,   _______,   _______, _______, \
-        _______, KC_DEL, _______,  _______,  _______,  _______,    _______,   _______,    _______,  _______,    _______,   _______,  _______,   _______,    _______,  _______,   _______,   _______,   _______,   _______, _______, \
-        _______, EDA_MS,  EDA_AG,   EDA_ZO,  EDA_PM,  _______,    KC_LEFT,   KC_DOWN,    KC_UP,    KC_RGHT,    _______,   _______,  _______,               _______,  _______,   _______,   _______,   _______,   _______, _______, \
-        _______, EDA_SO,  EDA_SL,  _______,  _______,  _______,    _______,   _______,    _______,  _______,    _______,   _______,  _______,                         _______,              _______,   _______,   _______,          \
+        _______, KC_DEL, EDA_ZB,  _______,  _______,  _______,    _______,   _______,    _______,  _______,    _______,   _______,  _______,   _______,    _______,  _______,   _______,   _______,   _______,   _______, _______, \
+        _______, EDA_MS,  EDA_TOR,   EDA_PM,  EDA_TGA,  _______,    KC_LEFT,   KC_DOWN,    KC_UP,    KC_RGHT,    _______,   _______,  _______,               _______,  _______,   _______,   _______,   _______,   _______, _______, \
+        _______, EDA_SL,  EDA_SI,  EDA_TGH,  EDA_TGR,  _______,    _______,   _______,    _______,  _______,    _______,   _______,  _______,                         _______,              _______,   _______,   _______,          \
         _______,          _______,  _______,  _______,              _______,               _______,              _______,   _______,  _______,   _______,    _______,  _______,   _______,   _______,   _______                      \
     ),
 };
 
 void keyboard_post_init_user(void) {
     // Customise these values to desired behaviour
-    debug_enable=true;
+    debug_enable=false;
     //debug_matrix=true;
     //debug_keyboard=true;
     ////debug_mouse=true;
@@ -79,43 +101,14 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
 #ifdef CONSOLE_ENABLE
     uprintf("KL: kc: %u, col: %u, row: %u, pressed: %u\n", keycode, record->event.key.col, record->event.key.row, record->event.pressed);
 #endif
-    switch (keycode) {
-        case EDA_MS: // Move selection
-            if (record->event.pressed) {
-                // when keycode QMKBEST is pressed
-                SEND_STRING("ms");
-            }
-        break;
-        case EDA_AG: // Arrange group
-            if (record->event.pressed) {
-                // when keycode QMKBEST is pressed
-                SEND_STRING("ag");
-            }
-        break;
-        case EDA_ZO: // Zoom out
-            if (record->event.pressed) {
-                // when keycode QMKBEST is pressed
-                SEND_STRING("zo");
-            }
-        break;
-        case EDA_PM: // Poly Manager
-            if (record->event.pressed) {
-                // when keycode QMKBEST is pressed
-                SEND_STRING("pm");
-            }
-        break;
-        case EDA_SO: // Selction out
-            if (record->event.pressed) {
-                // when keycode QMKBEST is pressed
-                SEND_STRING("so");
-            }
-        break;
-        case EDA_SL: // Selection line
-            if (record->event.pressed) {
-                // when keycode QMKBEST is pressed
-                SEND_STRING("sl");
-            }
-        break;
+    int code = keycode - SAFE_RANGE;
+#ifdef CONSOLE_ENABLE
+    uprintf("code[%d]\n", code);
+#endif
+    if ((code < ISK_MACRO_CNT) && (code >= 0)) {
+        if (record->event.pressed) {
+            SEND_STRING(isokey_marcos[code]);
+        }
     }
     return true;
 }

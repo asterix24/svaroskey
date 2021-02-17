@@ -802,7 +802,7 @@ void send_string(const char *str) {
 }
 
 void send_string_P(const char *str) {
-  send_string_with_delay_P(str, 0);
+  send_string_with_delay_P(str, 50);
 }
 
 void send_string_with_delay(const char *str, uint8_t interval) {
